@@ -1,2 +1,2 @@
-# it3105
+# IT3105
 Artificial Intelligence Programming
