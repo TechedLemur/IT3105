@@ -1,5 +1,4 @@
 from typing import List
-from xmlrpc.client import Boolean
 from simworlds.simworld import SimWorld, Action
 from config import Config
 
@@ -15,11 +14,12 @@ class HanoiWorld(SimWorld):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
 
-        self.discs = [[] for _ in range(self.nr_discs)]
-        self.pegs = list(range(1, self.nr_pegs + 1))
-        self.discs[0] = self.pegs
+        self.discs: List[List[int]] = [[] for _ in range(self.nr_discs)]
+        self.discs[0] = list(i * 2 + 1 for i in range(0, self.nr_pegs))
+        self.length = max(self.discs[0]) + 2
 
     def get_actions(self) -> List[HanoiWorldAction]:
+        # Might be easier to just make check_legal_action public?
         pass
 
     def do_action(self, action: HanoiWorldAction) -> bool:
@@ -36,7 +36,32 @@ class HanoiWorld(SimWorld):
         pass
 
     def visualize_individual_solutions(self):
-        pass
+        print()
+
+        conc_str: List[str] = []
+
+        for disc in self.discs:
+            tmp = ""
+            ln = len(disc)
+            while ln < self.nr_pegs:
+                tmp += " " * self.length + " \n"
+                ln += 1
+            for peg in disc:
+                tmp += ("*" * peg).center(self.length, " ") + " \n"
+
+            tmp += "_" * self.length + " \n"
+            conc_str.append(tmp)
+
+        splt_lines = zip(conc_str[0].split("\n"), conc_str[1].split("\n"))
+        # horizontal join
+        final = "\n".join([x + y for x, y in splt_lines])
+
+        for i in range(2, len(conc_str)):
+            splt_lines = zip(final.split("\n"), conc_str[i].split("\n"))
+            # horizontal join
+            final = "\n".join([x + y for x, y in splt_lines])
+        print(final)
+        print()
 
     def visualize_learning_progress(self):
         pass
