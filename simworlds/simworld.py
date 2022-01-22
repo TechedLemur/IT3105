@@ -12,7 +12,7 @@ class SimWorld(ABC):
         pass
 
     @abstractmethod
-    def get_actions(self) -> List[Action]:
+    def get_legal_actions(self) -> List[Action]:
         pass
 
     @abstractmethod

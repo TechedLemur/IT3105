@@ -18,7 +18,7 @@ class HanoiWorld(SimWorld):
         self.discs[0] = list(i * 2 + 1 for i in range(0, self.nr_pegs))
         self.length = max(self.discs[0]) + 2
 
-    def get_actions(self) -> List[HanoiWorldAction]:
+    def get_legal_actions(self) -> List[HanoiWorldAction]:
         # Might be easier to just make check_legal_action public?
         pass
 
