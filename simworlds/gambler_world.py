@@ -2,6 +2,7 @@ from typing import List
 from simworlds.simworld import SimWorld, Action
 from config import Config
 from random import randint, random
+import matplotlib.pyplot as plt
 
 
 class GamblerWorldAction(Action):
@@ -38,8 +39,10 @@ class GamblerWorld(SimWorld):
         return self.units
 
     def visualize_individual_solutions(self):
-        print()
-        print()
+        plt.plot(range(1, 100), range(1, 100))
+        plt.xlabel("State")
+        plt.ylabel("Wager")
+        plt.show()
 
     def visualize_learning_progress(self):
         pass
