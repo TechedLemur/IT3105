@@ -23,3 +23,4 @@ if __name__ == "__main__":
     print("Legal Actions: ", gw.get_legal_actions())
     gw.do_action(GamblerWorldAction(2))
     print("State: ", gw.get_state())
+    # gw.visualize_individual_solutions()
