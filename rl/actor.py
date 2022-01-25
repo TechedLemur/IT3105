@@ -43,6 +43,7 @@ class Actor():
             action = max(filtered, key=filtered.get)[1]
 
         self.actions_in_episode.add((state, action))
+        # A bit unsure if it is correct to set this here. Looking at step3 in the algorithm..
         self.e[(state, action)] = 1
 
         return action
