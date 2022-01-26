@@ -2,9 +2,10 @@ from typing import Dict, Tuple
 from simworlds.gambler_world import GamblerWorld, GamblerWorldAction, GamblerWorldState
 from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction
 from simworlds.simworld import Action, State
+from simworlds.pole_world import PoleWorld, PoleWorldAction, PoleWorldState
 
 if __name__ == "__main__":
-    hw = HanoiWorld()
+    """ hw = HanoiWorld()
     # print(hw.discs)
     # print(hw.pegs)
     ha = HanoiWorldAction(1, 1)
@@ -32,4 +33,7 @@ if __name__ == "__main__":
     state2 = GamblerWorldState(1)
     action2 = GamblerWorldAction(2)
     print(action2.__hash__())
-    print(k[(state2, action2)])
+    print(k[(state2, action2)]) """
+    pw = PoleWorld()
+    pw.update_state(10)
+    print(pw.state)

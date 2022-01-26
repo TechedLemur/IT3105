@@ -1,34 +1,91 @@
+from dataclasses import dataclass
 from typing import List
-from simworlds.simworld import SimWorld, Action
+from simworlds.simworld import SimWorld, Action, State
 from config import Config
-from random import randint, random
 import matplotlib.pyplot as plt
+from random import uniform
+from math import sin, cos
 
 
+@dataclass
 class PoleWorldAction(Action):
-    def __init__(self, units_to_bet: int):
-        self.units = units_to_bet
+    F: float
 
-    def __repr__(self):
-        return str(self.units)
+    def __hash__(self):
+        return hash(repr(self))
+
+
+@dataclass
+class PoleWorldState(State):
+    x: float
+    dx: float
+    ddx: float
+    theta: float
+    dtheta: float
+    ddtheta: float
+
+    def __hash__(self):
+        return hash(repr(self))
 
 
 class PoleWorld(SimWorld):
     def __init__(self):
-        self.L = 0.5  # [m]
-        self.m_p = 0.1  # [kg]
+        self.L = Config.PoleWorldConfig.POLE_LENGTH  # [m]
+        self.m_p = Config.PoleWorldConfig.POLE_MASS  # [kg]
         self.m_c = 1.0  # [kg]
-        self.g = 9.8  # [m/s^2]
-        self.theta = 1  # [rad]
+        self.g = Config.PoleWorldConfig.GRAVITY  # [m/s^2]
+
+        self.theta_max = 0.21  # [rad]
+        self.horizontal_borders: List[float] = [-2.4, 2.4]  # [m]
+        self.vertical_borders: List[float] = [-self.theta_max, self.theta_max]  # [rad]
+
+        self.F = 10  # [N]
+        self.T = 300  # Number of timesteps
+        self.dt = Config.PoleWorldConfig.TIMESTEP  # [s]
+
+        self.state = PoleWorldState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
+
+    def __update_state(self, F: float):
+        ddtheta = (
+            self.g * sin(self.state.theta)
+            + cos(self.state.theta)
+            * (
+                -F
+                - self.m_p
+                * self.L
+                * self.state.ddtheta
+                * sin(self.state.theta)
+                / (self.m_p + self.m_c)
+            )
+        ) / (
+            self.L
+            * (4 / 3 - (self.m_p * cos(self.state.theta) ** 2) / (self.m_c + self.m_p))
+        )
+        ddx = (
+            F
+            + self.m_p
+            * self.L
+            * (
+                self.state.dtheta ** 2 * sin(self.state.theta)
+                - self.state.ddtheta * cos(self.state.theta)
+            )
+        ) / (self.m_c + self.m_p)
+
+        dtheta = self.state.dtheta + ddtheta * self.dt
+        dx = self.state.dx + ddx * self.dt
+        theta = self.state.theta + dtheta * self.dt
+        x = self.state.x + dx * self.dt
+
+        self.state = PoleWorldState(x, dx, ddx, theta, dtheta, ddtheta)
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
-        pass
+        return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
 
     def do_action(self, action: PoleWorldAction) -> bool:
-        pass
+        self.__update_state(action.F)
 
-    def get_state(self):
-        pass
+    def get_state(self) -> PoleWorldState:
+        return self.state
 
     def visualize_individual_solutions(self):
         plt.plot(range(1, 100), range(1, 100))
@@ -37,7 +94,4 @@ class PoleWorld(SimWorld):
         plt.show()
 
     def visualize_learning_progress(self):
-        pass
-
-    def __check_legal_action(self, action: PoleWorldAction):
-        pass
+        print("ok")
