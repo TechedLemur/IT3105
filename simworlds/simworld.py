@@ -1,8 +1,15 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List
 
 
-class Action:
+@dataclass
+class Action(ABC):
+    pass
+
+
+@dataclass
+class State(ABC):
     pass
 
 

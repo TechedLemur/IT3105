@@ -1,16 +1,18 @@
+from dataclasses import dataclass
 from typing import List
-from simworlds.simworld import SimWorld, Action
+from simworlds.simworld import SimWorld, Action, State
 from config import Config
 from random import randint, random
 import matplotlib.pyplot as plt
 
 
+@dataclass
 class GamblerWorldAction(Action):
-    def __init__(self, units_to_bet: int):
-        self.units = units_to_bet
+    units: int
 
-    def __repr__(self):
-        return str(self.units)
+
+class GamblerWorldState(State):
+    state: int
 
 
 class GamblerWorld(SimWorld):
