@@ -1,5 +1,7 @@
-from simworlds.gambler_world import GamblerWorld, GamblerWorldAction
+from typing import Dict, Tuple
+from simworlds.gambler_world import GamblerWorld, GamblerWorldAction, GamblerWorldState
 from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction
+from simworlds.simworld import Action, State
 
 if __name__ == "__main__":
     hw = HanoiWorld()
@@ -24,3 +26,10 @@ if __name__ == "__main__":
     gw.do_action(GamblerWorldAction(2))
     print("State: ", gw.get_state())
     # gw.visualize_individual_solutions()
+    state = GamblerWorldState(1)
+    action = GamblerWorldAction(2)
+    k: Dict[Tuple[State, Action] : str] = {(state, action): "alright"}
+    state2 = GamblerWorldState(1)
+    action2 = GamblerWorldAction(2)
+    print(action2.__hash__())
+    print(k[(state2, action2)])

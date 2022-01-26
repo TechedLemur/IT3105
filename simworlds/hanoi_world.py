@@ -9,10 +9,16 @@ class HanoiWorldAction(Action):
     peg_to_move: int
     to_disc: int
 
+    def __hash__(self):
+        return hash(repr(self))
+
 
 @dataclass
 class HanoiWorldState(State):
     state: List[List[int]]
+
+    def __hash__(self):
+        return hash(repr(self))
 
 
 class HanoiWorld(SimWorld):

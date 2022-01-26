@@ -3,14 +3,14 @@ from dataclasses import dataclass
 from typing import List
 
 
-@dataclass
 class Action(ABC):
-    pass
+    def __hash__(self):
+        return hash(repr(self))
 
 
-@dataclass
 class State(ABC):
-    pass
+    def __hash__(self):
+        return hash(repr(self))
 
 
 class SimWorld(ABC):
