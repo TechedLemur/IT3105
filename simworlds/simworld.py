@@ -23,7 +23,7 @@ class SimWorld(ABC):
         pass
 
     @abstractmethod
-    def get_state(self):
+    def get_state(self) -> State:
         pass
 
     @abstractmethod
