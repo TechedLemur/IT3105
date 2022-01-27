@@ -43,12 +43,17 @@ class Actor():
             action = max(filtered, key=filtered.get)[1]
 
         self.actions_in_episode.add((state, action))
-        # A bit unsure if it is correct to set this here. Looking at step3 in the algorithm..
-        self.e[(state, action)] = 1
 
         return action
 
+    def update_eligibility(self, state, action):
+        self.e[(state, action)] = 1
+
+    def set_epsilon(self, epsilon):
+        self.epsilon = epsilon
+
     def reset_episode(self):
+        self.actions_in_episode = set()
         self.e = {x: 0 for x in self.e}
 
     def fill_if_new_SAP(self, state, action):

@@ -34,6 +34,7 @@ class Critic():
 
     # Resets the critic to be ready for new episode the state is the initial state of the system
     def reset_episode(self, state):
+        self.current_states = set()
         self.add_if_new_state(state)
         # Set all values to 0. Maybe it also works to just re-init til dict to an empty one
         self.e = {x: 0 for x in self.e}

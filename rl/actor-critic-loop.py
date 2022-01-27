@@ -25,7 +25,9 @@ for episode in episodes:
 
         legal_actions = SimWorld.get_legal_actions(new_state)
 
-        new_action = a.select_action(new_state, legal_actions)  # Step 2,3
+        new_action = a.select_action(new_state, legal_actions)  # Step 2
+
+        a.update_eligibility(state, action)  # Step 3
 
         td = c.calculate_td(state, new_state, reward)  # step 4,5
 
@@ -36,3 +38,6 @@ for episode in episodes:
         # Step 7
         action = new_action
         state = new_state
+
+# Do greedy run
+a.set_epsilon(0)
