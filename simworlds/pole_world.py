@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 from simworlds.simworld import SimWorld, Action, State
 from config import Config
 import matplotlib.pyplot as plt
 from random import uniform
-from math import sin, cos
+from math import sin, cos, exp
 
 
 @dataclass
@@ -17,15 +17,18 @@ class PoleWorldAction(Action):
 
 @dataclass
 class PoleWorldState(State):
+    def __hash__(self):
+        return hash(repr(self))
+
+
+@dataclass
+class InternalState:
     x: float
     dx: float
     ddx: float
     theta: float
     dtheta: float
     ddtheta: float
-
-    def __hash__(self):
-        return hash(repr(self))
 
 
 class PoleWorld(SimWorld):
@@ -76,16 +79,23 @@ class PoleWorld(SimWorld):
         theta = self.state.theta + dtheta * self.dt
         x = self.state.x + dx * self.dt
 
-        self.state = PoleWorldState(x, dx, ddx, theta, dtheta, ddtheta)
+        self.state = InternalState(x, dx, ddx, theta, dtheta, ddtheta)
+        self.external_state = PoleWorldState(False)
+
+    def __get_reward(self) -> int:
+        return exp(-((self.theta_max * self.state.theta) ** 2))
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
         return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
 
-    def do_action(self, action: PoleWorldAction) -> bool:
+    def do_action(self, action: PoleWorldAction) -> Tuple[PoleWorldState, int]:
         self.__update_state(action.F)
+        self.external_state = PoleWorldState(False)
+        reward = self.__get_reward()
+        return (self.external_state, reward)
 
     def get_state(self) -> PoleWorldState:
-        return self.state
+        return self.external_state
 
     def visualize_individual_solutions(self):
         plt.plot(range(1, 100), range(1, 100))
