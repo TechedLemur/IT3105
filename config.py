@@ -27,5 +27,6 @@ class Config:
         NETWORK_DIMENSIONS = [1, 2, 3]
 
     class MainConfig:
+        EPISODES = 1000
         VISUALIZE = False
         FRAME_DELAY = 500
