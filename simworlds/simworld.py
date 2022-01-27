@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 
 class Action(ABC):
@@ -26,7 +26,7 @@ class SimWorld(ABC):
         pass
 
     @abstractmethod
-    def do_action(self, action: Action):
+    def do_action(self, action: Action) -> Tuple[State, int]:
         pass
 
     @abstractmethod
