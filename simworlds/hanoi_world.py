@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 from simworlds.simworld import SimWorld, Action, State
 from config import Config
 
 
 @dataclass
 class HanoiWorldAction(Action):
-    dics_to_move: int
+    disc_to_move: int
     to_peg: int
 
     def __hash__(self):
@@ -26,27 +26,31 @@ class HanoiWorld(SimWorld):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
 
-        self.pegs = HanoiWorldState([[] for _ in range(self.nr_discs)])
+        self.pegs = HanoiWorldState(False, [[] for _ in range(self.nr_discs)])
         self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
         self.length = max(self.pegs.state[0]) + 2
 
     def __get_reward(self):
-
         return -1
 
-    def get_legal_actions(self) -> List[HanoiWorldAction]:
-        # Might be easier to just make check_legal_action public?
+    def __check_final_state(self):
         pass
 
-    def do_action(self, action: HanoiWorldAction) -> bool:
-        if self.__check_legal_action(action):
-            for peg in self.pegs.state:
-                if action.disc_to_move in peg:
-                    peg.remove(action.disc_to_move)
-            self.pegss.state[action.to_peg].insert(0, action.disc_to_move)
-            return True
-        else:
-            return False
+    def get_legal_actions(self) -> List[HanoiWorldAction]:
+        possible_actions: List[HanoiWorldAction] = []
+        for peg in self.pegs.state:
+            if peg:
+                disc = peg[0]
+                for i, p in enumerate(self.pegs.state):
+                    if not p or disc < p[0]:
+                        possible_actions.append(HanoiWorldAction(disc, i))
+        return possible_actions
+
+    def do_action(self, action: HanoiWorldAction) -> Tuple[HanoiWorldState, int]:
+        for peg in self.pegs.state:
+            if action.disc_to_move in peg:
+                peg.remove(action.disc_to_move)
+        self.pegs.state[action.to_peg].insert(0, action.disc_to_move)
 
     def get_state(self) -> HanoiWorldState:
         return self.pegs.state
