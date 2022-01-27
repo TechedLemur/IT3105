@@ -12,3 +12,20 @@ class Config:
         GRAVITY = 9.81  # Range [5, 15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
 
+    class ActorConfig:
+        ALPHA = 0.1  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.9  # Trace decay
+        EPSILON = 0.1  # Initial epsilon fro epsilon-greedy actor
+
+    class CriticConfig:
+        # True if table based, false if using ANN function approximation
+        IS_TABLE_NOT_NEURAL = True
+        ALPHA = 0.1  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.9  # Trace decay
+        NETWORK_DIMENSIONS = [1, 2, 3]
+
+    class MainConfig:
+        VISUALIZE = False
+        FRAME_DELAY = 500
