@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 from simworlds.simworld import SimWorld, Action, State
 from config import Config
+from copy import deepcopy
 
 
 @dataclass
@@ -26,15 +27,21 @@ class HanoiWorld(SimWorld):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
 
-        self.pegs = HanoiWorldState(False, [[] for _ in range(self.nr_discs)])
+        self.pegs: HanoiWorldState = HanoiWorldState(
+            False, [[] for _ in range(self.nr_discs)]
+        )
         self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
         self.length = max(self.pegs.state[0]) + 2
 
-    def __get_reward(self):
+    def __get_reward(self) -> int:
         return -1
 
-    def __check_final_state(self):
-        pass
+    def __is_final_state(self):
+        for i, p in self.pegs.state:
+            if i != 0:
+                if len(p) == self.nr_discs:
+                    return True
+        return False
 
     def get_legal_actions(self) -> List[HanoiWorldAction]:
         possible_actions: List[HanoiWorldAction] = []
@@ -51,6 +58,9 @@ class HanoiWorld(SimWorld):
             if action.disc_to_move in peg:
                 peg.remove(action.disc_to_move)
         self.pegs.state[action.to_peg].insert(0, action.disc_to_move)
+        reward = self.__get_reward()
+        final_state = self.__is_final_state()
+        return (HanoiWorldState(final_state, deepcopy(self.pegs.state)), reward)
 
     def get_state(self) -> HanoiWorldState:
         return self.pegs.state
