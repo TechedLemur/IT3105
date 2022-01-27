@@ -7,14 +7,10 @@ from simworlds.pole_world import PoleWorld, PoleWorldAction, PoleWorldState
 
 def test_hanoi_world():
     hw = HanoiWorld()
-    print(hw.pegs)
-    print(hw.get_legal_actions())
     ha = HanoiWorldAction(1, 1)
     hw.do_action(ha)
-    print(hw.pegs)
     ha = HanoiWorldAction(3, 2)
     hw.do_action(ha)
-    print(hw.pegs)
     ha = HanoiWorldAction(1, 2)
     hw.do_action(ha)
     ha = HanoiWorldAction(5, 1)

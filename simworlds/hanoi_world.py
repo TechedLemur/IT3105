@@ -39,9 +39,7 @@ class HanoiWorld(SimWorld):
         return -1
 
     def __is_final_state(self):
-        print(self.pegs.state)
         for i, p in enumerate(self.pegs.state):
-            print(p)
             if i != 0 and len(p) == self.nr_discs:
                 return True
         return False
