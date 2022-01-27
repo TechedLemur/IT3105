@@ -34,13 +34,13 @@ class GamblerWorld(SimWorld):
         elif self.state.units == 100:
             return 1000
         else:
-            return self.state.units
+            return 0  # self.state.units
 
-    def get_legal_actions(self) -> List[GamblerWorldAction]:
+    def get_legal_actions(self, state: GamblerWorldState) -> List[GamblerWorldAction]:
         return list(
             GamblerWorldAction(i)
             for i in range(
-                1, min(self.max_units - self.state.units, self.state.units) + 1
+                1, min(self.max_units - state.units, state.units) + 1
             )
         )
 
@@ -49,11 +49,14 @@ class GamblerWorld(SimWorld):
         # If it is less than the probability of success pw ([0, 100]) then it is a success.
         random_number = randint(1, 100)
         if random_number < self.pw:
-            self.state.units += action.units
+            new_units = self.state.units + action.units
+            self.state = GamblerWorldState(
+                new_units == 100 or new_units == 0, new_units)
         else:
-            self.state.units -= action.units
+            new_units = self.state.units - action.units
+            self.state = GamblerWorldState(
+                new_units == 100 or new_units == 0, new_units)
         reward = self.__get_reward()
-        self.state.is_final_state = self.state.units == 100 or self.state.units == 0
         return (self.state, reward)
 
     def visualize_individual_solutions(self):
