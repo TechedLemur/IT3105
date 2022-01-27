@@ -8,7 +8,10 @@ class Action(ABC):
         return hash(repr(self))
 
 
+@dataclass
 class State(ABC):
+    is_final_state: bool
+
     def __hash__(self):
         return hash(repr(self))
 
@@ -20,10 +23,6 @@ class SimWorld(ABC):
 
     @abstractmethod
     def get_legal_actions(self) -> List[Action]:
-        pass
-
-    @abstractmethod
-    def get_state(self) -> State:
         pass
 
     @abstractmethod
