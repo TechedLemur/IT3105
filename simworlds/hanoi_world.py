@@ -6,8 +6,8 @@ from config import Config
 
 @dataclass
 class HanoiWorldAction(Action):
-    peg_to_move: int
-    to_disc: int
+    dics_to_move: int
+    to_peg: int
 
     def __hash__(self):
         return hash(repr(self))
@@ -26,9 +26,13 @@ class HanoiWorld(SimWorld):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
 
-        self.discs = HanoiWorldState([[] for _ in range(self.nr_discs)])
-        self.discs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_pegs))
-        self.length = max(self.discs.state[0]) + 2
+        self.pegs = HanoiWorldState([[] for _ in range(self.nr_discs)])
+        self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
+        self.length = max(self.pegs.state[0]) + 2
+
+    def __get_reward(self):
+
+        return -1
 
     def get_legal_actions(self) -> List[HanoiWorldAction]:
         # Might be easier to just make check_legal_action public?
@@ -36,30 +40,30 @@ class HanoiWorld(SimWorld):
 
     def do_action(self, action: HanoiWorldAction) -> bool:
         if self.__check_legal_action(action):
-            for disc in self.discs.state:
-                if action.peg_to_move in disc:
-                    disc.remove(action.peg_to_move)
-            self.discs.state[action.to_disc].insert(0, action.peg_to_move)
+            for peg in self.pegs.state:
+                if action.disc_to_move in peg:
+                    peg.remove(action.disc_to_move)
+            self.pegss.state[action.to_peg].insert(0, action.disc_to_move)
             return True
         else:
             return False
 
     def get_state(self) -> HanoiWorldState:
-        return self.discs.state
+        return self.pegs.state
 
     def visualize_individual_solutions(self):
         print()
 
         conc_str: List[str] = []
 
-        for disc in self.discs.state:
+        for peg in self.pegs.state:
             tmp = ""
-            ln = len(disc)
-            while ln < self.nr_pegs:
+            ln = len(peg)
+            while ln < self.nr_discs:
                 tmp += " " * self.length + " \n"
                 ln += 1
-            for peg in disc:
-                tmp += ("*" * peg).center(self.length, " ") + " \n"
+            for disc in peg:
+                tmp += ("*" * disc).center(self.length, " ") + " \n"
 
             tmp += "_" * self.length + " \n"
             conc_str.append(tmp)
@@ -78,21 +82,3 @@ class HanoiWorld(SimWorld):
 
     def visualize_learning_progress(self):
         pass
-
-    def __check_legal_action(self, action: HanoiWorldAction):
-        for disc in self.discs.state:
-            if action.peg_to_move in disc:
-                if (
-                    disc[0] != action.peg_to_move
-                ):  # The peg we are trying to move should be the smallest in the disc (the first in the list)
-                    return False
-
-        # If there already is a peg at the disc to move to check if the peg we are trying
-        # to move is smaller than the peg there
-        if (
-            len(self.discs.state[action.to_disc]) > 0
-            and self.discs.state[action.to_disc][0] < action.peg_to_move
-        ):
-            return False
-
-        return True

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 from simworlds.simworld import SimWorld, Action, State
 from config import Config
 from random import randint, random
@@ -16,7 +16,7 @@ class GamblerWorldAction(Action):
 
 @dataclass
 class GamblerWorldState(State):
-    state: int
+    units: int
 
     def __hash__(self):
         return hash(repr(self))
@@ -26,29 +26,35 @@ class GamblerWorld(SimWorld):
     def __init__(self):
         self.pw = Config.GamblerWorldConfig.WIN_PROBABILITY * 100
         self.max_units = 100
-        self.units = GamblerWorldState(randint(1, 99))
+        self.state = GamblerWorldState(False, randint(1, 99))
+
+    def __get_reward(self) -> int:
+        if self.state.units == 0:
+            return -1000
+        elif self.state.units == 100:
+            return 1000
+        else:
+            return self.state.units
 
     def get_legal_actions(self) -> List[GamblerWorldAction]:
         return list(
             GamblerWorldAction(i)
             for i in range(
-                1, min(self.max_units - self.units.state, self.units.state) + 1
+                1, min(self.max_units - self.state.units, self.state.units) + 1
             )
         )
 
-    def do_action(self, action: GamblerWorldAction) -> bool:
-        if self.__check_legal_action(action):
-            # A successful bet is done by sampling a random number in range [1, 100]
-            # If it is less than the probability of success pw ([0, 100]) then it is a success.
-            random_number = randint(1, 100)
-            if random_number < self.pw:
-                self.units.state += action.units
-            return True
+    def do_action(self, action: GamblerWorldAction) -> Tuple[GamblerWorldState, int]:
+        # A successful bet is done by sampling a random number in range [1, 100]
+        # If it is less than the probability of success pw ([0, 100]) then it is a success.
+        random_number = randint(1, 100)
+        if random_number < self.pw:
+            self.state.units += action.units
         else:
-            return False
-
-    def get_state(self) -> GamblerWorldState:
-        return self.units
+            self.state.units -= action.units
+        reward = self.__get_reward()
+        self.state.is_final_state = self.state.units == 100 or self.state.units == 0
+        return (self.state, reward)
 
     def visualize_individual_solutions(self):
         plt.plot(range(1, 100), range(1, 100))
@@ -58,9 +64,3 @@ class GamblerWorld(SimWorld):
 
     def visualize_learning_progress(self):
         pass
-
-    def __check_legal_action(self, action: GamblerWorldAction):
-        return (
-            action.units <= self.max_units - self.units.state
-            and action.units <= self.units.state
-        )
