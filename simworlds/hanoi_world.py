@@ -34,13 +34,16 @@ class HanoiWorld(SimWorld):
         self.length = max(self.pegs.state[0]) + 2
 
     def __get_reward(self) -> int:
+        if self.__is_final_state():
+            return 1000
         return -1
 
     def __is_final_state(self):
-        for i, p in self.pegs.state:
-            if i != 0:
-                if len(p) == self.nr_discs:
-                    return True
+        print(self.pegs.state)
+        for i, p in enumerate(self.pegs.state):
+            print(p)
+            if i != 0 and len(p) == self.nr_discs:
+                return True
         return False
 
     def get_legal_actions(self) -> List[HanoiWorldAction]:

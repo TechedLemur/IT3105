@@ -17,10 +17,14 @@ def test_hanoi_world():
     print(hw.pegs)
     ha = HanoiWorldAction(1, 2)
     hw.do_action(ha)
-    print(hw.pegs)
+    ha = HanoiWorldAction(5, 1)
+    hw.do_action(ha)
     ha = HanoiWorldAction(1, 0)
     hw.do_action(ha)
-    print(hw.pegs)
+    ha = HanoiWorldAction(3, 1)
+    hw.do_action(ha)
+    ha = HanoiWorldAction(1, 1)
+    print(hw.do_action(ha))
     hw.visualize_individual_solutions()
 
 
