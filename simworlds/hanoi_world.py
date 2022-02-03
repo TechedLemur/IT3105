@@ -31,8 +31,9 @@ class HanoiWorld(SimWorld):
             False, [[] for _ in range(self.nr_discs)]
         )
         self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
-        self.length = max(self.pegs.state[0]) + 2
         self.moves = 0
+
+        self.state_history = [deepcopy(self.pegs.state)]
 
     def __get_reward(self) -> int:
         if self.__is_final_state():
@@ -63,39 +64,47 @@ class HanoiWorld(SimWorld):
         reward = self.__get_reward()
         final_state = self.__is_final_state()
         self.moves += 1
-        return (HanoiWorldState(final_state, deepcopy(self.pegs.state)), reward)
+        new_state = HanoiWorldState(final_state, deepcopy(self.pegs.state))
+        self.state_history.append(deepcopy(self.pegs.state))
+        return (new_state, reward)
 
     def get_state(self) -> HanoiWorldState:
         return HanoiWorldState(self.__is_final_state(), deepcopy(self.pegs.state))
 
-    def visualize_individual_solutions(self):
-        print()
+    @staticmethod
+    def visualize_solution(peg_states: List[List[int]], nr_discs: int):
+        for i, pegs in enumerate(peg_states):
+            if i == 0:
+                print("Initial state: ")
+            else:
+                print(f"Step {i}:")
 
-        conc_str: List[str] = []
+            conc_str: List[str] = []
+            length = nr_discs + 2
 
-        for peg in self.pegs.state:
-            tmp = ""
-            ln = len(peg)
-            while ln < self.nr_discs:
-                tmp += " " * self.length + " \n"
-                ln += 1
-            for disc in peg:
-                tmp += ("*" * disc).center(self.length, " ") + " \n"
+            for peg in pegs:
+                tmp = ""
+                ln = len(peg)
+                while ln < nr_discs:
+                    tmp += " " * length + " \n"
+                    ln += 1
+                for disc in peg:
+                    tmp += ("*" * disc).center(length, " ") + " \n"
 
-            tmp += "_" * self.length + " \n"
-            conc_str.append(tmp)
+                tmp += "_" * length + " \n"
+                conc_str.append(tmp)
 
-        # Copied from: https://stackoverflow.com/questions/60876606/how-to-concatenate-two-formatted-strings-in-python
-        splt_lines = zip(conc_str[0].split("\n"), conc_str[1].split("\n"))
-        # horizontal join
-        final = "\n".join([x + y for x, y in splt_lines])
-
-        for i in range(2, len(conc_str)):
-            splt_lines = zip(final.split("\n"), conc_str[i].split("\n"))
+            # Copied from: https://stackoverflow.com/questions/60876606/how-to-concatenate-two-formatted-strings-in-python
+            splt_lines = zip(conc_str[0].split("\n"), conc_str[1].split("\n"))
             # horizontal join
             final = "\n".join([x + y for x, y in splt_lines])
-        print(final)
-        print()
+
+            for i in range(2, len(conc_str)):
+                splt_lines = zip(final.split("\n"), conc_str[i].split("\n"))
+                # horizontal join
+                final = "\n".join([x + y for x, y in splt_lines])
+            print(final)
+            print()
 
     def visualize_learning_progress(self):
         pass

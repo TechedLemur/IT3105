@@ -29,10 +29,5 @@ class SimWorld(ABC):
     def do_action(self, action: Action) -> Tuple[State, int]:
         pass
 
-    @abstractmethod
-    def visualize_individual_solutions(self):
-        pass
-
-    @abstractmethod
     def visualize_learning_progress(self):
         pass
