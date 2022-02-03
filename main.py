@@ -33,5 +33,16 @@ def test_gambler_world():
     # gw.visualize_individual_solutions()
 
 
+def test_pole_world():
+    pw = PoleWorld()
+    act = pw.get_legal_actions()
+    print(pw.state)
+    new_state, reward = pw.do_action(act[0])
+    print(new_state)
+    print(pw.theta_discret[new_state.theta])
+    print("new internal: ", pw.state)
+
+
+
 if __name__ == "__main__":
-    test_hanoi_world()
+    test_pole_world()
