@@ -18,8 +18,10 @@ class PoleWorldAction(Action):
 
 @dataclass
 class PoleWorldState(State):
-    x: int
+    # x: int
     theta: int
+    # dx: int
+    dtheta: int
 
     def __hash__(self):
         return hash(repr(self))
@@ -45,7 +47,8 @@ class PoleWorld(SimWorld):
         self.theta_max = 0.21  # [rad]
         self.x_max = 2.4
         self.horizontal_borders: List[float] = [-self.x_max, self.x_max]  # [m]
-        self.vertical_borders: List[float] = [-self.theta_max, self.theta_max]  # [rad]
+        # [rad]
+        self.vertical_borders: List[float] = [-self.theta_max, self.theta_max]
 
         self.F = 10  # [N]
         self.T = 300  # Number of timesteps
@@ -54,7 +57,7 @@ class PoleWorld(SimWorld):
 
         self.state = InternalState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
 
-        self.N = 100
+        self.N = 8
 
         self.x_discret = np.linspace(
             self.horizontal_borders[0], self.horizontal_borders[1], self.N
@@ -62,6 +65,15 @@ class PoleWorld(SimWorld):
         self.theta_discret = np.linspace(
             self.vertical_borders[0], self.vertical_borders[1], self.N
         )
+        self.dx_discret = np.linspace(
+            -5, 5, self.N
+        )
+        self.dtheta_discret = np.linspace(
+            -5, 5, self.N
+        )
+        self.external_state = self.convert_internal_to_external_state(False)
+        self.pole_positions = [self.state.theta]
+        self.cart_positions = [self.state.x]
 
     def __update_state(self, F: float):
         ddtheta = (
@@ -95,7 +107,6 @@ class PoleWorld(SimWorld):
         x = self.state.x + dx * self.dt
 
         self.state = InternalState(x, dx, ddx, theta, dtheta, ddtheta)
-        self.external_state = self.convert_internal_to_external_state(False)
 
     def __within_limits(self):
         return (
@@ -115,10 +126,11 @@ class PoleWorld(SimWorld):
 
     def __get_reward(self, final_state: bool, success: bool) -> int:
         if final_state and success:
-            return 100000  # GTA music
+            return 1000  # GTA music
         elif final_state and not success:
-            return -10000
-        return exp(-((self.theta_max * self.state.theta) ** 2))
+            return -500
+        # exp(-((self.theta_max * self.state.theta) ** 2))
+        return 1 - abs(self.state.theta)
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
         return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
@@ -127,14 +139,22 @@ class PoleWorld(SimWorld):
         self.t += 1
         self.__update_state(action.F)
         final_state, success = self.__is_final_state()
-        self.external_state = self.convert_internal_to_external_state(final_state)
+        self.external_state = self.convert_internal_to_external_state(
+            final_state)
         reward = self.__get_reward(final_state, success)
+        self.pole_positions.append(self.state.theta)
+        self.cart_positions.append(self.state.x)
+
         return (self.external_state, reward)
 
     def convert_internal_to_external_state(self, final_state: bool) -> PoleWorldState:
         x_d = PoleWorld.find_nearest(self.x_discret, self.state.x)
         theta_d = PoleWorld.find_nearest(self.theta_discret, self.state.theta)
-        return PoleWorldState(final_state, x_d, theta_d)
+        dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
+        dtheta_d = PoleWorld.find_nearest(
+            self.dtheta_discret, self.state.dtheta)
+        # return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
+        return PoleWorldState(final_state,  theta_d, dtheta_d)
 
     def get_state(self) -> PoleWorldState:
         return self.external_state
