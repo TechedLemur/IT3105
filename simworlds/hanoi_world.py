@@ -32,10 +32,11 @@ class HanoiWorld(SimWorld):
         )
         self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
         self.length = max(self.pegs.state[0]) + 2
+        self.moves = 0
 
     def __get_reward(self) -> int:
         if self.__is_final_state():
-            return 1000
+            return 15
         return -1
 
     def __is_final_state(self):
@@ -61,10 +62,11 @@ class HanoiWorld(SimWorld):
         self.pegs.state[action.to_peg].insert(0, action.disc_to_move)
         reward = self.__get_reward()
         final_state = self.__is_final_state()
+        self.moves += 1
         return (HanoiWorldState(final_state, deepcopy(self.pegs.state)), reward)
 
     def get_state(self) -> HanoiWorldState:
-        return self.pegs.state
+        return HanoiWorldState(self.__is_final_state(), deepcopy(self.pegs.state))
 
     def visualize_individual_solutions(self):
         print()

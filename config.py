@@ -4,7 +4,7 @@ class Config:
         PEGS = 3  # Range [2, 6]
 
     class GamblerWorldConfig:
-        WIN_PROBABILITY = 0.5  # Range [0, 1.0]
+        WIN_PROBABILITY = 0.6  # Range [0, 1.0]
 
     class PoleWorldConfig:
         POLE_LENGTH = 0.5  # Range [0.1, 1.0]

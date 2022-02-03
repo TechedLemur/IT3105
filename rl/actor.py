@@ -24,7 +24,7 @@ class Actor():
             self.policy[key] += self.alpha * td_error * self.e[key]
             self.e[key] *= self.gamma * \
                 self.lambda_lr  # Discount eligibility
-        self.epsilon *= 0.95
+        self.epsilon *= 0.98
 
     # Do an action based on a state and current policy
 

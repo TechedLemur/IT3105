@@ -36,11 +36,11 @@ class GamblerWorld(SimWorld):
         else:
             return 0  # self.state.units
 
-    def get_legal_actions(self, state: GamblerWorldState) -> List[GamblerWorldAction]:
+    def get_legal_actions(self) -> List[GamblerWorldAction]:
         return list(
             GamblerWorldAction(i)
             for i in range(
-                1, min(self.max_units - state.units, state.units) + 1
+                1, min(self.max_units - self.state.units, self.state.units) + 1
             )
         )
 
