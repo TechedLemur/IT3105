@@ -83,7 +83,7 @@ class PoleWorld(SimWorld):
                 -F
                 - self.m_p
                 * self.L
-                * self.state.ddtheta
+                * (self.state.dtheta ** 2)
                 * sin(self.state.theta)
                 / (self.m_p + self.m_c)
             )
