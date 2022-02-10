@@ -1,8 +1,6 @@
-import numpy as np
-from tensorflow.keras import layers
-from tensorflow import keras
 import random
-import timeit
+import torch
+import torch.nn as nn
 
 
 class Critic():
@@ -20,16 +18,18 @@ class Critic():
             self.V = {}
         else:
             # Init neural network
-            self.model = keras.Sequential([
-                keras.Input(shape=inputNeurons),
-                # layers.Dense(50, activation="relu", name="layer2"),
-                layers.Dense(1, activation="relu", name="output"),
-            ])
-            opt = keras.optimizers.Adam(
-                learning_rate=0.01
+            self.model = nn.Sequential(
+                nn.Linear(inputNeurons, 64),
+                nn.ReLU(),
+                nn.Linear(64, 50),
+                nn.ReLU(),
+                nn.Linear(50, 40),
+                nn.Linear(40, 1),
+                # nn.Flatten(0,1)
             )
-            self.model.compile(loss='mse', optimizer=opt)
-
+            self.optimizer = torch.optim.Adam(
+                self.model.parameters(), lr=0.005)
+            self.loss_function = torch.nn.MSELoss()
             self.train_x = []
             self.train_y = []
 
@@ -45,8 +45,8 @@ class Critic():
         # start = timeit.default_timer()
         # td = reward + self.gamma * self.model.predict(np.array([new_state.as_one_hot()]))[
         #     0][0] - self.model.predict(np.array([state.as_one_hot()]))[0][0]
-        td = reward + self.gamma * self.model.predict(np.array([new_state.as_one_hot()]))[
-            0][0] - self.model.predict(np.array([state.as_one_hot()]))[0][0]
+        td = reward + self.gamma * self.model(torch.tensor(
+            new_state.as_one_hot())).item() - self.model(torch.tensor(state.as_one_hot())).item()
         # stop = timeit.default_timer()
         # print('Time td: ', stop - start)
         return td
@@ -58,16 +58,12 @@ class Critic():
                 self.V[state] += self.alpha * td * self.e[state]
                 self.e[state] *= self.gamma*self.lambda_lr
         else:
-            # start = timeit.default_timer()
             x = state.as_one_hot()
             y = reward + self.gamma * \
-                self.model.predict(np.array([new_state.as_one_hot()]))[0][0]
+                self.model(torch.tensor(new_state.as_one_hot())).item()
 
             self.train_x.append(x)
             self.train_y.append(y)
-            # stop = timeit.default_timer()
-            # print('Time update: ', stop - start)
-            # self.model.fit(x, np.array([y]), verbose=0)
 
     # Resets the critic to be ready for new episode the state is the initial state of the system
 
@@ -83,11 +79,13 @@ class Critic():
             self.train_y = []
 
     def update_weights(self):
-        # start = timeit.default_timer()
-        self.model.fit(np.array(self.train_x),
-                       np.array(self.train_y), batch_size=1)
-        # stop = timeit.default_timer()
-        # print('Time update weights: ', stop - start)
+
+        for x, y in zip(self.train_x, self.train_y):  # TODO?: Add minibatching
+            self.optimizer.zero_grad()
+            y_pred = self.model(torch.tensor(x))
+            loss = self.loss_function(y_pred, torch.tensor(y))
+            loss.backward()
+            self.optimizer.step()
 
     def add_if_new_state(self, state):
         if self.isTable:
