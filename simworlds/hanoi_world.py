@@ -3,6 +3,7 @@ from typing import List, Tuple
 from simworlds.simworld import SimWorld, Action, State
 from config import Config
 from copy import deepcopy
+import numpy as np
 
 
 @dataclass
@@ -17,6 +18,11 @@ class HanoiWorldAction(Action):
 @dataclass
 class HanoiWorldState(State):
     state: List[List[int]]
+
+    def as_one_hot(self) -> np.ndarray[bool]:
+        # Number of possible states is 3^N (N is number of pegs)
+        one_hot_state = np.zeros(3**len(self.state), dtype=bool)
+        return states
 
     def __hash__(self):
         return hash(repr(self))

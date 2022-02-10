@@ -4,6 +4,8 @@ from simworlds.simworld import SimWorld, Action, State
 from config import Config
 from random import randint, random
 import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow import keras
 
 
 @dataclass
@@ -17,6 +19,12 @@ class GamblerWorldAction(Action):
 @dataclass
 class GamblerWorldState(State):
     units: int
+
+    def as_one_hot(self):
+        # units_one_hot = np.zeros(101, dtype=bool)
+        # units_one_hot[self.units] = True
+        # return np.array(units_one_hot)
+        return keras.utils.to_categorical(self.units, 101)
 
     def __hash__(self):
         return hash(repr(self))
@@ -34,7 +42,7 @@ class GamblerWorld(SimWorld):
         elif self.state.units == 100:
             return 1000
         else:
-            return 0  # self.state.units
+            return 0
 
     def get_legal_actions(self) -> List[GamblerWorldAction]:
         return list(

@@ -43,6 +43,5 @@ def test_pole_world():
     print("new internal: ", pw.state)
 
 
-
 if __name__ == "__main__":
-    test_pole_world()
+    test_gambler_world()

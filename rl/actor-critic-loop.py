@@ -5,7 +5,7 @@ from critic import Critic
 from simworlds.simworld import SimWorld
 
 a = Actor(alpha=0.05, gamma=0.01, lambda_lr=0.1, epsilon=0.3)
-c = Critic(isTableNotNeural=True, alpha=0.04, gamma=0.03, lambda_lr=0.9)
+c = Critic(isTable=True, alpha=0.04, gamma=0.03, lambda_lr=0.9)
 
 episodes = 50
 steps = 100
@@ -32,7 +32,7 @@ for episode in episodes:
         td = c.calculate_td(state, new_state, reward)  # step 4,5
 
         # step 6
-        c.update(td)
+        c.update(td, state, new_state)
         a.update(td)
 
         # Step 7
