@@ -4,6 +4,23 @@ from simworlds.simworld import SimWorld, Action, State
 from config import Config
 from copy import deepcopy
 import numpy as np
+import itertools
+import string
+
+# Helpers for one-hot encoding
+
+
+def generate_dictionary():
+    pegs = Config.HanoiWorldConfig.PEGS
+    s = list(string.ascii_lowercase[:pegs])
+
+    product = [p for p in itertools.product(s, repeat=3)]
+    d = dict(zip(product, range(len(product))))
+    return d
+
+
+# Global object since we don't want to regenerate this everytime..
+string_to_index = generate_dictionary()
 
 
 @dataclass
@@ -19,10 +36,24 @@ class HanoiWorldAction(Action):
 class HanoiWorldState(State):
     state: List[List[int]]
 
-    def as_one_hot(self) -> np.ndarray[bool]:
-        # Number of possible states is 3^N (N is number of pegs)
-        one_hot_state = np.zeros(3**len(self.state), dtype=bool)
-        return states
+    def as_one_hot(self) -> np.ndarray:
+        # Number of possible states is M^N (M number of pegs, N number of discs)
+        one_hot_state = np.zeros(
+            Config.HanoiWorldConfig.PEGS ** Config.HanoiWorldConfig.DISCS, dtype=bool
+        )
+        s = self.get_string_representation()
+        index = string_to_index[s]
+        one_hot_state[index] = 1
+
+        return one_hot_state
+
+    def get_string_representation(self):
+        s = ["" for _ in range(Config.HanoiWorldConfig.DISCS)]
+
+        for i in range(len(self.state)):
+            for l in self.state[i]:
+                s[l - 1] = chr(i + 97)
+        return tuple(s)
 
     def __hash__(self):
         return hash(repr(self))
@@ -36,7 +67,7 @@ class HanoiWorld(SimWorld):
         self.pegs: HanoiWorldState = HanoiWorldState(
             False, [[] for _ in range(self.nr_discs)]
         )
-        self.pegs.state[0] = list(i * 2 + 1 for i in range(0, self.nr_discs))
+        self.pegs.state[0] = list(range(self.nr_discs))
         self.moves = 0
 
         self.state_history = [deepcopy(self.pegs.state)]
@@ -78,7 +109,7 @@ class HanoiWorld(SimWorld):
         return HanoiWorldState(self.__is_final_state(), deepcopy(self.pegs.state))
 
     @staticmethod
-    def visualize_solution(peg_states: List[List[int]], nr_discs: int):
+    def visualize_solution(peg_states: List[List[List[int]]], nr_discs: int):
         for i, pegs in enumerate(peg_states):
             if i == 0:
                 print("Initial state: ")
@@ -95,7 +126,7 @@ class HanoiWorld(SimWorld):
                     tmp += " " * length + " \n"
                     ln += 1
                 for disc in peg:
-                    tmp += ("*" * disc).center(length, " ") + " \n"
+                    tmp += ("*" * (2 * disc + 1)).center(length, " ") + " \n"
 
                 tmp += "_" * length + " \n"
                 conc_str.append(tmp)

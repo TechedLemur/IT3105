@@ -1,27 +1,19 @@
 from typing import Dict, Tuple
 from simworlds.gambler_world import GamblerWorld, GamblerWorldAction, GamblerWorldState
-from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction
+from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction, generate_dictionary
 from simworlds.simworld import Action, State
 from simworlds.pole_world import PoleWorld, PoleWorldAction, PoleWorldState
 
 
 def test_hanoi_world():
     hw = HanoiWorld()
-    ha = HanoiWorldAction(1, 1)
+    state = hw.get_state()
+    print(state.as_one_hot())
+    ha = HanoiWorldAction(0, 1)
     hw.do_action(ha)
-    ha = HanoiWorldAction(3, 2)
-    hw.do_action(ha)
-    ha = HanoiWorldAction(1, 2)
-    hw.do_action(ha)
-    ha = HanoiWorldAction(5, 1)
-    hw.do_action(ha)
-    ha = HanoiWorldAction(1, 0)
-    hw.do_action(ha)
-    ha = HanoiWorldAction(3, 1)
-    hw.do_action(ha)
-    ha = HanoiWorldAction(1, 1)
-    print(hw.do_action(ha))
-    hw.visualize_individual_solutions()
+    state, _ = hw.do_action(ha)
+    print(state.as_one_hot())
+    HanoiWorld.visualize_solution([state.state], 3)
 
 
 def test_gambler_world():
@@ -44,4 +36,4 @@ def test_pole_world():
 
 
 if __name__ == "__main__":
-    test_gambler_world()
+    test_hanoi_world()
