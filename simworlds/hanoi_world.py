@@ -11,6 +11,9 @@ import string
 
 
 def generate_dictionary():
+    """Generates a dictionary with string representation of a state as key and the index it should map to as value.
+    See: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
+    """
     pegs = Config.HanoiWorldConfig.PEGS
     s = list(string.ascii_lowercase[:pegs])
 
