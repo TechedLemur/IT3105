@@ -33,7 +33,9 @@ def test_pole_world():
     print(new_state)
     print(pw.theta_discret[new_state.theta])
     print("new internal: ", pw.state)
+    print(new_state.as_one_hot())
 
 
 if __name__ == "__main__":
-    test_hanoi_world()
+    #test_hanoi_world()
+    test_pole_world()

@@ -6,6 +6,16 @@ import matplotlib.pyplot as plt
 from random import uniform
 from math import sin, cos, exp
 import numpy as np
+import itertools
+
+# Create mapping fron external state -> one hot encoded external state
+p = list(
+    itertools.product(
+        range(Config.PoleWorldConfig.DISCRETIZATION),
+        range(Config.PoleWorldConfig.DISCRETIZATION),
+    )
+)
+one_hot_mapping = dict(zip(p, list(range(len(p)))))
 
 
 @dataclass
@@ -22,6 +32,11 @@ class PoleWorldState(State):
     theta: int
     # dx: int
     dtheta: int
+
+    def as_one_hot(self) -> np.ndarray:
+        one_hot_vector = np.zeros(Config.PoleWorldConfig.DISCRETIZATION**2, dtype=bool)
+        one_hot_vector[one_hot_mapping[(self.theta, self.dtheta)]] = 1
+        return one_hot_vector
 
     def __hash__(self):
         return hash(repr(self))
@@ -57,7 +72,7 @@ class PoleWorld(SimWorld):
 
         self.state = InternalState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
 
-        self.N = 8
+        self.N = Config.PoleWorldConfig.DISCRETIZATION
 
         self.x_discret = np.linspace(
             self.horizontal_borders[0], self.horizontal_borders[1], self.N
@@ -65,12 +80,9 @@ class PoleWorld(SimWorld):
         self.theta_discret = np.linspace(
             self.vertical_borders[0], self.vertical_borders[1], self.N
         )
-        self.dx_discret = np.linspace(
-            -5, 5, self.N
-        )
-        self.dtheta_discret = np.linspace(
-            -5, 5, self.N
-        )
+        self.dx_discret = np.linspace(-5, 5, self.N)
+        self.dtheta_discret = np.linspace(-5, 5, self.N)
+
         self.external_state = self.convert_internal_to_external_state(False)
         self.pole_positions = [self.state.theta]
         self.cart_positions = [self.state.x]
@@ -139,8 +151,7 @@ class PoleWorld(SimWorld):
         self.t += 1
         self.__update_state(action.F)
         final_state, success = self.__is_final_state()
-        self.external_state = self.convert_internal_to_external_state(
-            final_state)
+        self.external_state = self.convert_internal_to_external_state(final_state)
         reward = self.__get_reward(final_state, success)
         self.pole_positions.append(self.state.theta)
         self.cart_positions.append(self.state.x)
@@ -151,10 +162,9 @@ class PoleWorld(SimWorld):
         x_d = PoleWorld.find_nearest(self.x_discret, self.state.x)
         theta_d = PoleWorld.find_nearest(self.theta_discret, self.state.theta)
         dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
-        dtheta_d = PoleWorld.find_nearest(
-            self.dtheta_discret, self.state.dtheta)
+        dtheta_d = PoleWorld.find_nearest(self.dtheta_discret, self.state.dtheta)
         # return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
-        return PoleWorldState(final_state,  theta_d, dtheta_d)
+        return PoleWorldState(final_state, theta_d, dtheta_d)
 
     def get_state(self) -> PoleWorldState:
         return self.external_state
