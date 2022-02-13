@@ -32,6 +32,9 @@ class GamblerWorld(SimWorld):
     def __init__(self):
         self.pw = Config.GamblerWorldConfig.WIN_PROBABILITY * 100
         self.max_units = 100
+        self.set_initial_world_state()
+
+    def set_initial_world_state(self):
         self.state = GamblerWorldState(False, randint(1, 99))
 
     def __get_reward(self) -> int:

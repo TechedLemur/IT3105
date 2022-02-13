@@ -63,6 +63,9 @@ class HanoiWorld(SimWorld):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
 
+        self.set_initial_world_state()
+
+    def set_initial_world_state(self):
         self.pegs: HanoiWorldState = HanoiWorldState(
             False, [[] for _ in range(self.nr_discs)]
         )

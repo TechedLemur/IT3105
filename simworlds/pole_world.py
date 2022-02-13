@@ -69,8 +69,6 @@ class PoleWorld(SimWorld):
         self.t = 1  # Current timestep
         self.dt = Config.PoleWorldConfig.TIMESTEP  # [s]
 
-        self.state = InternalState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
-
         self.N = Config.PoleWorldConfig.DISCRETIZATION
 
         self.x_discret = np.linspace(
@@ -82,9 +80,14 @@ class PoleWorld(SimWorld):
         self.dx_discret = np.linspace(-5, 5, self.N)
         self.dtheta_discret = np.linspace(-5, 5, self.N)
 
+        self.set_initial_world_state()
+
+    def set_initial_world_state(self):
+        self.state = InternalState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
         self.external_state = self.convert_internal_to_external_state(False)
         self.pole_positions = [self.state.theta]
         self.cart_positions = [self.state.x]
+
 
     def __update_state(self, F: float):
         ddtheta = (
