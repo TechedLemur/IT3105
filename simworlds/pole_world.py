@@ -8,16 +8,6 @@ from math import sin, cos, exp
 import numpy as np
 import itertools
 
-# Create mapping fron external state -> one hot encoded external state
-p = list(
-    itertools.product(
-        range(Config.PoleWorldConfig.DISCRETIZATION),
-        range(Config.PoleWorldConfig.DISCRETIZATION),
-    )
-)
-one_hot_mapping = dict(zip(p, list(range(len(p)))))
-
-
 @dataclass
 class PoleWorldAction(Action):
     F: float
@@ -35,7 +25,7 @@ class PoleWorldState(State):
 
     def as_one_hot(self) -> np.ndarray:
         one_hot_vector = np.zeros(Config.PoleWorldConfig.DISCRETIZATION**2, dtype=bool)
-        one_hot_vector[one_hot_mapping[(self.theta, self.dtheta)]] = 1
+        one_hot_vector[PoleWorld.ONE_HOT_MAPPING[(self.theta, self.dtheta)]] = 1
         return one_hot_vector
 
     def __hash__(self):
@@ -53,6 +43,15 @@ class InternalState:
 
 
 class PoleWorld(SimWorld):
+
+    # Create mapping fron external state -> one hot encoded external state
+    ONE_HOT_MAPPING = dict(zip(list(
+        itertools.product(
+            range(Config.PoleWorldConfig.DISCRETIZATION),
+            range(Config.PoleWorldConfig.DISCRETIZATION),
+        )
+    ), list(range(Config.PoleWorldConfig.DISCRETIZATION**2))))
+
     def __init__(self):
         self.L = Config.PoleWorldConfig.POLE_LENGTH  # [m]
         self.m_p = Config.PoleWorldConfig.POLE_MASS  # [kg]

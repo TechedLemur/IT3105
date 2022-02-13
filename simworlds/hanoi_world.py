@@ -7,9 +7,7 @@ import numpy as np
 import itertools
 import string
 
-# Helpers for one-hot encoding
-
-
+# Helper for one-hot encoding
 def generate_dictionary():
     """Generates a dictionary with string representation of a state as key and the index it should map to as value.
     See: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
@@ -20,10 +18,6 @@ def generate_dictionary():
     product = [p for p in itertools.product(s, repeat=3)]
     d = dict(zip(product, range(len(product))))
     return d
-
-
-# Global object since we don't want to regenerate this everytime..
-string_to_index = generate_dictionary()
 
 
 @dataclass
@@ -45,8 +39,7 @@ class HanoiWorldState(State):
             Config.HanoiWorldConfig.PEGS ** Config.HanoiWorldConfig.DISCS, dtype=bool
         )
         s = self.get_string_representation()
-        index = string_to_index[s]
-        one_hot_state[index] = 1
+        one_hot_state[HanoiWorld.ONE_HOT_MAPPING[s]] = 1
 
         return one_hot_state
 
@@ -63,6 +56,9 @@ class HanoiWorldState(State):
 
 
 class HanoiWorld(SimWorld):
+
+    ONE_HOT_MAPPING = generate_dictionary()
+
     def __init__(self):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS
