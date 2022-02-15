@@ -1,7 +1,7 @@
 class Config:
     class HanoiWorldConfig:
-        DISCS = 3  # Range [3, 5]
-        PEGS = 3  # Range [2, 6]
+        DISCS = 3  # Range [2, 6]
+        PEGS = 3  # Range [3, 5]
         ONE_HOT_LENGTH = PEGS ** DISCS
         MAX_STEPS = PEGS * DISCS * 20
 
@@ -20,17 +20,17 @@ class Config:
 
     class HanoiActorConfig:
         ALPHA = 0.02  # Learning rate
-        GAMMA = 0.9  # Discount rate
-        LAMBDA = 0.85  # Trace decay
-        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.98  # Epislon decay rate
+        GAMMA = 0.93  # Discount rate
+        LAMBDA = 0.97  # Trace decay
+        EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.97  # Epislon decay rate
 
     class GamblerActorConfig:
         ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.85  # Trace decay
-        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.98  # Epislon decay rate
+        EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.9  # Epislon decay rate
 
     class PoleActorConfig:
         ALPHA = 0.02  # Learning rate
@@ -41,16 +41,18 @@ class Config:
 
     class HanoiCriticConfig:
         # True if table based, false if using ANN function approximation
-        IS_TABLE = True
+        IS_TABLE = False
         ALPHA = 0.02  # Learning rate
-        GAMMA = 0.9  # Discount rate
-        LAMBDA = 0.9  # Trace decay
-        NETWORK_DIMENSIONS = [64, 50]
+        NN_ALPHA = 0.0005  # Neural network LR
+        GAMMA = 0.95  # Discount rate
+        LAMBDA = 0.98  # Trace decay
+        NETWORK_DIMENSIONS = [100, 64, 40]
 
     class GamblerCriticConfig:
         # True if table based, false if using ANN function approximation
         IS_TABLE = False
         ALPHA = 0.02  # Learning rate
+        NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
         NETWORK_DIMENSIONS = [64, 50]
@@ -59,6 +61,7 @@ class Config:
         # True if table based, false if using ANN function approximation
         IS_TABLE = True
         ALPHA = 0.02  # Learning rate
+        NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
         NETWORK_DIMENSIONS = [64, 50]

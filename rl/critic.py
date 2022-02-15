@@ -10,6 +10,7 @@ class Critic():
         # True if table based, false if using ANN function approximation
         self.is_table = config.IS_TABLE
         self.alpha = config.ALPHA
+        self.nn_alpha = config.NN_ALPHA
         self.gamma = config.GAMMA
         self.lambda_lr = config.LAMBDA
         if self.is_table:
@@ -26,7 +27,7 @@ class Critic():
             self.model = nn.Sequential(*layers)
 
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=self.alpha)
+                self.model.parameters(), lr=self.nn_alpha)
 
             self.loss_function = torch.nn.MSELoss()
             self.train_x = []
