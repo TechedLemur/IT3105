@@ -55,6 +55,9 @@ class GamblerWorld(SimWorld):
             )
         )
 
+    def get_state(self):
+        return self.state
+
     def do_action(self, action: GamblerWorldAction) -> Tuple[GamblerWorldState, int]:
         # A successful bet is done by sampling a random number in range [1, 100]
         # If it is less than the probability of success pw ([0, 100]) then it is a success.

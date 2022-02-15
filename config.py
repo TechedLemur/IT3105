@@ -8,6 +8,7 @@ class Config:
     class GamblerWorldConfig:
         WIN_PROBABILITY = 0.6  # Range [0, 1.0]
         ONE_HOT_LENGTH = 101
+        MAX_STEPS = 200
 
     class PoleWorldConfig:
         POLE_LENGTH = 0.5  # Range [0.1, 1.0]
@@ -48,8 +49,8 @@ class Config:
 
     class GamblerCriticConfig:
         # True if table based, false if using ANN function approximation
-        IS_TABLE = True
-        ALPHA = 0.1  # Learning rate
+        IS_TABLE = False
+        ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
         NETWORK_DIMENSIONS = [64, 50]
@@ -65,4 +66,4 @@ class Config:
     class MainConfig:
         EPISODES = 200
         VISUALIZE = False
-        FRAME_DELAY = 100
+        DELAY = 20

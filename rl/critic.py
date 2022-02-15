@@ -82,7 +82,7 @@ class Critic():
         for x, y in zip(self.train_x, self.train_y):  # TODO?: Add minibatching
             self.optimizer.zero_grad()
             y_pred = self.model(torch.tensor(x))
-            loss = self.loss_function(y_pred, torch.tensor(y))
+            loss = self.loss_function(y_pred, torch.tensor([y]))
             loss.backward()
             self.optimizer.step()
 
