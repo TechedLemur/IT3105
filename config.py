@@ -16,7 +16,7 @@ class Config:
         GRAVITY = -9.81  # Range [-5, -15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
         DISCRETIZATION = 4
-        ONE_HOT_LENGTH = DISCRETIZATION ** 3
+        ONE_HOT_LENGTH = DISCRETIZATION ** 4
 
     class HanoiActorConfig:
         ALPHA = 0.02  # Learning rate
@@ -37,7 +37,7 @@ class Config:
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.85  # Trace decay
         EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.995  # Epislon decay rate
+        EPSILON_DECAY = 0.98  # Epislon decay rate
 
     class HanoiCriticConfig:
         # True if table based, false if using ANN function approximation
@@ -64,9 +64,9 @@ class Config:
         NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
-        NETWORK_DIMENSIONS = [64, 50]
+        NETWORK_DIMENSIONS = [128, 64, 32]
 
     class MainConfig:
-        EPISODES = 700
-        VISUALIZE = False
+        EPISODES = 200
+        VISUALIZE = True
         DELAY = 20
