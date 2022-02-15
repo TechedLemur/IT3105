@@ -1,10 +1,12 @@
 class Config:
     class HanoiWorldConfig:
-        DISCS = 3  # Range [3, 5]
+        DISCS = 5  # Range [3, 5]
         PEGS = 3  # Range [2, 6]
+        ONE_HOT_LENGTH = PEGS ** DISCS
 
     class GamblerWorldConfig:
         WIN_PROBABILITY = 0.6  # Range [0, 1.0]
+        ONE_HOT_LENGTH = 101
 
     class PoleWorldConfig:
         POLE_LENGTH = 0.5  # Range [0.1, 1.0]
@@ -12,6 +14,7 @@ class Config:
         GRAVITY = -9.81  # Range [-5, -15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
         DISCRETIZATION = 8
+        ONE_HOT_LENGTH = DISCRETIZATION ** 3
 
     class ActorConfig:
         ALPHA = 0.1  # Learning rate

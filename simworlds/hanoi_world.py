@@ -35,9 +35,7 @@ class HanoiWorldState(State):
 
     def as_one_hot(self) -> np.ndarray:
         # Number of possible states is M^N (M number of pegs, N number of discs)
-        one_hot_state = np.zeros(
-            Config.HanoiWorldConfig.PEGS ** Config.HanoiWorldConfig.DISCS, dtype=bool
-        )
+        one_hot_state = np.zeros(Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=bool)
         s = self.get_string_representation()
         one_hot_state[HanoiWorld.ONE_HOT_MAPPING[s]] = 1
 
@@ -67,7 +65,7 @@ class HanoiWorld(SimWorld):
 
     def set_initial_world_state(self):
         self.pegs: HanoiWorldState = HanoiWorldState(
-            False, [[] for _ in range(self.nr_discs)]
+            False, [[] for _ in range(self.nr_pegs)]
         )
         self.pegs.state[0] = list(range(self.nr_discs))
         self.moves = 0
@@ -111,7 +109,8 @@ class HanoiWorld(SimWorld):
         return HanoiWorldState(self.__is_final_state(), deepcopy(self.pegs.state))
 
     @staticmethod
-    def visualize_solution(peg_states: List[List[List[int]]], nr_discs: int):
+    def visualize_solution(peg_states: List[List[List[int]]]):
+        discs = Config.HanoiWorldConfig.DISCS
         for i, pegs in enumerate(peg_states):
             if i == 0:
                 print("Initial state: ")
@@ -119,12 +118,12 @@ class HanoiWorld(SimWorld):
                 print(f"Step {i}:")
 
             conc_str: List[str] = []
-            length = nr_discs + 2
+            length = discs + 7
 
             for peg in pegs:
                 tmp = ""
                 ln = len(peg)
-                while ln < nr_discs:
+                while ln < discs:
                     tmp += " " * length + " \n"
                     ln += 1
                 for disc in peg:

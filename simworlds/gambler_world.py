@@ -20,7 +20,9 @@ class GamblerWorldState(State):
     units: int
 
     def as_one_hot(self):
-        units_one_hot = np.zeros(101, dtype=np.float32)
+        units_one_hot = np.zeros(
+            Config.GamblerWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
+        )
         units_one_hot[self.units] = 1
         return units_one_hot
 
@@ -60,11 +62,13 @@ class GamblerWorld(SimWorld):
         if random_number < self.pw:
             new_units = self.state.units + action.units
             self.state = GamblerWorldState(
-                new_units == 100 or new_units == 0, new_units)
+                new_units == 100 or new_units == 0, new_units
+            )
         else:
             new_units = self.state.units - action.units
             self.state = GamblerWorldState(
-                new_units == 100 or new_units == 0, new_units)
+                new_units == 100 or new_units == 0, new_units
+            )
         reward = self.__get_reward()
         return (self.state, reward)
 

@@ -8,6 +8,7 @@ from math import sin, cos, exp
 import numpy as np
 import itertools
 
+
 @dataclass
 class PoleWorldAction(Action):
     F: float
@@ -18,13 +19,15 @@ class PoleWorldAction(Action):
 
 @dataclass
 class PoleWorldState(State):
-    # x: int
+    x: int
     theta: int
     # dx: int
     dtheta: int
 
     def as_one_hot(self) -> np.ndarray:
-        one_hot_vector = np.zeros(Config.PoleWorldConfig.DISCRETIZATION**2, dtype=bool)
+        one_hot_vector = np.zeros(
+            Config.PoleWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
+        )
         one_hot_vector[PoleWorld.ONE_HOT_MAPPING[(self.theta, self.dtheta)]] = 1
         return one_hot_vector
 
@@ -45,12 +48,18 @@ class InternalState:
 class PoleWorld(SimWorld):
 
     # Create mapping fron external state -> one hot encoded external state
-    ONE_HOT_MAPPING = dict(zip(list(
-        itertools.product(
-            range(Config.PoleWorldConfig.DISCRETIZATION),
-            range(Config.PoleWorldConfig.DISCRETIZATION),
+    ONE_HOT_MAPPING = dict(
+        zip(
+            list(
+                itertools.product(
+                    range(Config.PoleWorldConfig.DISCRETIZATION),
+                    range(Config.PoleWorldConfig.DISCRETIZATION),
+                    range(Config.PoleWorldConfig.DISCRETIZATION),
+                )
+            ),
+            list(range(Config.PoleWorldConfig.ONE_HOT_LENGTH)),
         )
-    ), list(range(Config.PoleWorldConfig.DISCRETIZATION**2))))
+    )
 
     def __init__(self):
         self.L = Config.PoleWorldConfig.POLE_LENGTH  # [m]
@@ -87,7 +96,6 @@ class PoleWorld(SimWorld):
         self.external_state = self.convert_internal_to_external_state(False)
         self.pole_positions = [self.state.theta]
         self.cart_positions = [self.state.x]
-
 
     def __update_state(self, F: float):
         ddtheta = (
@@ -143,8 +151,7 @@ class PoleWorld(SimWorld):
             return 1000  # GTA music
         elif final_state and not success:
             return -500
-        # exp(-((self.theta_max * self.state.theta) ** 2))
-        return 1 - abs(self.state.theta)
+        return 1 - abs(self.state.theta)/self.theta_max - abs(self.state.x)/self.x_max
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
         return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
@@ -166,7 +173,7 @@ class PoleWorld(SimWorld):
         dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
         dtheta_d = PoleWorld.find_nearest(self.dtheta_discret, self.state.dtheta)
         # return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
-        return PoleWorldState(final_state, theta_d, dtheta_d)
+        return PoleWorldState(final_state, x_d, theta_d, dtheta_d)
 
     def get_state(self) -> PoleWorldState:
         return self.external_state
