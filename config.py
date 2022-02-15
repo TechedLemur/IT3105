@@ -6,7 +6,7 @@ class Config:
         MAX_STEPS = PEGS * DISCS * 20
 
     class GamblerWorldConfig:
-        WIN_PROBABILITY = 0.6  # Range [0, 1.0]
+        WIN_PROBABILITY = 0.55  # Range [0, 1.0]
         ONE_HOT_LENGTH = 101
         MAX_STEPS = 200
 
@@ -26,11 +26,11 @@ class Config:
         EPSILON_DECAY = 0.97  # Epislon decay rate
 
     class GamblerActorConfig:
-        ALPHA = 0.02  # Learning rate
-        GAMMA = 0.9  # Discount rate
-        LAMBDA = 0.85  # Trace decay
-        EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.9  # Epislon decay rate
+        ALPHA = 0.04  # Learning rate
+        GAMMA = 0.93  # Discount rate
+        LAMBDA = 0.94  # Trace decay
+        EPSILON = 0.2  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.95  # Epislon decay rate
 
     class PoleActorConfig:
         ALPHA = 0.02  # Learning rate
@@ -53,9 +53,9 @@ class Config:
         IS_TABLE = False
         ALPHA = 0.02  # Learning rate
         NN_ALPHA = 0.001  # Neural network LR
-        GAMMA = 0.9  # Discount rate
-        LAMBDA = 0.9  # Trace decay
-        NETWORK_DIMENSIONS = [64, 50]
+        GAMMA = 0.91  # Discount rate
+        LAMBDA = 0.93  # Trace decay
+        NETWORK_DIMENSIONS = [64, 40, 20]
 
     class PoleCriticConfig:
         # True if table based, false if using ANN function approximation
