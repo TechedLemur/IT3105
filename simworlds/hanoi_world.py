@@ -15,7 +15,7 @@ def generate_dictionary():
     pegs = Config.HanoiWorldConfig.PEGS
     s = list(string.ascii_lowercase[:pegs])
 
-    product = [p for p in itertools.product(s, repeat=3)]
+    product = [p for p in itertools.product(s, repeat=Config.HanoiWorldConfig.DISCS)]
     d = dict(zip(product, range(len(product))))
     return d
 
