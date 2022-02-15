@@ -35,13 +35,13 @@ class Config:
         ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.85  # Trace decay
-        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.98  # Epislon decay rate
+        EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.8  # Epislon decay rate
 
     class HanoiCriticConfig:
         # True if table based, false if using ANN function approximation
         IS_TABLE = True
-        ALPHA = 0.1  # Learning rate
+        ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
         NETWORK_DIMENSIONS = [64, 50]
@@ -57,7 +57,7 @@ class Config:
     class PoleCriticConfig:
         # True if table based, false if using ANN function approximation
         IS_TABLE = True
-        ALPHA = 0.1  # Learning rate
+        ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
         NETWORK_DIMENSIONS = [64, 50]

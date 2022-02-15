@@ -5,7 +5,7 @@ from config import Config
 
 class Actor():
 
-    def __init__(self, config=Config.ActorConfig) -> None:
+    def __init__(self, config) -> None:
         self.alpha = config.ALPHA
         self.gamma = config.GAMMA
         self.lambda_lr = config.LAMBDA  # lambda is a taken keyword in python
@@ -24,7 +24,6 @@ class Actor():
             self.policy[key] += self.alpha * td_error * self.e[key]
             self.e[key] *= self.gamma * \
                 self.lambda_lr  # Discount eligibility
-        self.epsilon *= self.epsilon_decay
 
     # Do an action based on a state and current policy
 
@@ -61,6 +60,9 @@ class Actor():
     def reset_episode(self):
         self.actions_in_episode = set()
         self.e = {x: 0 for x in self.e}
+        self.epsilon *= self.epsilon_decay
+        if self.epsilon < 0.0001:
+            self.epsilon = 0
 
     def fill_if_new_SAP(self, state, action):
         if (state, action) not in self.policy.keys():
