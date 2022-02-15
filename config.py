@@ -1,8 +1,9 @@
 class Config:
     class HanoiWorldConfig:
-        DISCS = 5  # Range [3, 5]
+        DISCS = 3  # Range [3, 5]
         PEGS = 3  # Range [2, 6]
         ONE_HOT_LENGTH = PEGS ** DISCS
+        MAX_STEPS = PEGS * DISCS * 20
 
     class GamblerWorldConfig:
         WIN_PROBABILITY = 0.6  # Range [0, 1.0]
@@ -16,21 +17,52 @@ class Config:
         DISCRETIZATION = 8
         ONE_HOT_LENGTH = DISCRETIZATION ** 3
 
-    class ActorConfig:
-        ALPHA = 0.1  # Learning rate
+    class HanoiActorConfig:
+        ALPHA = 0.02  # Learning rate
         GAMMA = 0.9  # Discount rate
-        LAMBDA = 0.9  # Trace decay
-        EPSILON = 0.1  # Initial epsilon fro epsilon-greedy actor
+        LAMBDA = 0.85  # Trace decay
+        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.98  # Epislon decay rate
 
-    class CriticConfig:
+    class GamblerActorConfig:
+        ALPHA = 0.02  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.85  # Trace decay
+        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.98  # Epislon decay rate
+
+    class PoleActorConfig:
+        ALPHA = 0.02  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.85  # Trace decay
+        EPSILON = 0.8  # Initial epsilon for epsilon-greedy actor
+        EPSILON_DECAY = 0.98  # Epislon decay rate
+
+    class HanoiCriticConfig:
         # True if table based, false if using ANN function approximation
-        IS_TABLE_NOT_NEURAL = True
+        IS_TABLE = True
         ALPHA = 0.1  # Learning rate
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.9  # Trace decay
-        NETWORK_DIMENSIONS = [1, 2, 3]
+        NETWORK_DIMENSIONS = [64, 50]
+
+    class GamblerCriticConfig:
+        # True if table based, false if using ANN function approximation
+        IS_TABLE = True
+        ALPHA = 0.1  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.9  # Trace decay
+        NETWORK_DIMENSIONS = [64, 50]
+
+    class PoleCriticConfig:
+        # True if table based, false if using ANN function approximation
+        IS_TABLE = True
+        ALPHA = 0.1  # Learning rate
+        GAMMA = 0.9  # Discount rate
+        LAMBDA = 0.9  # Trace decay
+        NETWORK_DIMENSIONS = [64, 50]
 
     class MainConfig:
-        EPISODES = 1000
+        EPISODES = 200
         VISUALIZE = False
-        FRAME_DELAY = 500
+        FRAME_DELAY = 100
