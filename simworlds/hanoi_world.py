@@ -8,6 +8,8 @@ import itertools
 import string
 
 # Helper for one-hot encoding
+
+
 def generate_dictionary():
     """Generates a dictionary with string representation of a state as key and the index it should map to as value.
     See: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
@@ -15,7 +17,8 @@ def generate_dictionary():
     pegs = Config.HanoiWorldConfig.PEGS
     s = list(string.ascii_lowercase[:pegs])
 
-    product = [p for p in itertools.product(s, repeat=Config.HanoiWorldConfig.DISCS)]
+    product = [p for p in itertools.product(
+        s, repeat=Config.HanoiWorldConfig.DISCS)]
     d = dict(zip(product, range(len(product))))
     return d
 
@@ -35,7 +38,8 @@ class HanoiWorldState(State):
 
     def as_one_hot(self) -> np.ndarray:
         # Number of possible states is M^N (M number of pegs, N number of discs)
-        one_hot_state = np.zeros(Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=bool)
+        one_hot_state = np.zeros(
+            Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=np.float32)
         s = self.get_string_representation()
         one_hot_state[HanoiWorld.ONE_HOT_MAPPING[s]] = 1
 
