@@ -62,12 +62,12 @@ class PoleSimulator:
                 self.critic.update(td, state=state, new_state=new_state)
                 self.actor.update(td)
 
+                if flag:
+                    break
+
                 # Step 7
                 action = new_action
                 state = new_state
-
-                if flag:
-                    break
 
             if not self.critic.is_table:
                 self.critic.update_weights()
@@ -125,12 +125,13 @@ class PoleSimulator:
 
             self.actor.update_eligibility(state, action)  # Step 3
 
+            if flag:
+                break
+
             # Step 7
             action = new_action
             state = new_state
 
-            if flag:
-                break
         if print_result:
             if self.world.success:
                 print("Great success")
