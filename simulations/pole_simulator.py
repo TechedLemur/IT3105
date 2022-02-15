@@ -7,8 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-class PoleSimulator():
-
+class PoleSimulator:
     def __init__(self) -> None:
         self.reset()
 
@@ -16,11 +15,14 @@ class PoleSimulator():
         self.scores = []
         self.solutions = []
         self.actor = Actor(Config.PoleActorConfig)
-        self.critic = Critic(config=Config.PoleCriticConfig,
-                             inputNeurons=Config.PoleWorldConfig.ONE_HOT_LENGTH)
+        self.critic = Critic(
+            config=Config.PoleCriticConfig,
+            inputNeurons=Config.PoleWorldConfig.ONE_HOT_LENGTH,
+        )
         self.world = PoleWorld()
 
     def run(self, episodes=Config.MainConfig.EPISODES, verbose=False):
+        print("Episodes:", episodes)
         for episode in range(episodes):
             if verbose:
                 print("Episode", episode)
@@ -45,15 +47,16 @@ class PoleSimulator():
                     flag = True
                     self.scores.append(self.world.t)
                     self.solutions.append(
-                        (self.world.pole_positions, self.world.cart_positions))
+                        (self.world.pole_positions, self.world.cart_positions)
+                    )
                 else:
                     new_action = self.actor.select_action(
-                        new_state, legal_actions)  # Step 2
+                        new_state, legal_actions
+                    )  # Step 2
 
                 self.actor.update_eligibility(state, action)  # Step 3
 
-                td = self.critic.calculate_td(
-                    state, new_state, reward)  # step 4,5
+                td = self.critic.calculate_td(state, new_state, reward)  # step 4,5
 
                 # step 6
                 self.critic.update(td, state=state, new_state=new_state)
@@ -85,6 +88,10 @@ class PoleSimulator():
         self.run(episodes=1)
 
         if print_result:
+            if self.world.success:
+                print("Great success")
+            else:
+                print("Failed miserably")
             self.print_run(-1)
 
     def do_greedy_strategy_no_learning(self, print_result=True):
@@ -101,7 +108,7 @@ class PoleSimulator():
         flag = False
         for _ in range(301):
 
-            new_state, reward = self.world.do_action(action)  # Step 1
+            new_state, _ = self.world.do_action(action)  # Step 1
 
             legal_actions = self.world.get_legal_actions()
 
@@ -109,10 +116,12 @@ class PoleSimulator():
                 flag = True
                 self.scores.append(self.world.t)
                 self.solutions.append(
-                    (self.world.pole_positions, self.world.cart_positions))
+                    (self.world.pole_positions, self.world.cart_positions)
+                )
             else:
                 new_action = self.actor.select_action(
-                    new_state, legal_actions)  # Step 2
+                    new_state, legal_actions
+                )  # Step 2
 
             self.actor.update_eligibility(state, action)  # Step 3
 
@@ -123,6 +132,10 @@ class PoleSimulator():
             if flag:
                 break
         if print_result:
+            if self.world.success:
+                print("Great success")
+            else:
+                print("Failed miserably")
             self.print_run(-1)
 
     def plot_learning(self):

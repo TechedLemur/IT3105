@@ -15,7 +15,7 @@ class Config:
         POLE_MASS = 0.25  # Range [0.05, 0.5]
         GRAVITY = -9.81  # Range [-5, -15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
-        DISCRETIZATION = 8
+        DISCRETIZATION = 4
         ONE_HOT_LENGTH = DISCRETIZATION ** 3
 
     class HanoiActorConfig:

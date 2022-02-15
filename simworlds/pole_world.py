@@ -98,6 +98,7 @@ class PoleWorld(SimWorld):
         self.pole_positions = [self.state.theta]
         self.cart_positions = [self.state.x]
         self.t = 1
+        self.success = False
 
     def __update_state(self, F: float):
         ddtheta = (
@@ -142,6 +143,7 @@ class PoleWorld(SimWorld):
 
     def __is_final_state(self) -> Tuple[bool, bool]:
         if self.t == self.T and self.__within_limits():
+            self.success = True
             return True, True
         elif not self.__within_limits():
             return True, False
@@ -150,9 +152,9 @@ class PoleWorld(SimWorld):
 
     def __get_reward(self, final_state: bool, success: bool) -> int:
         if final_state and success:
-            return 1000  # GTA music
+            return 20
         elif final_state and not success:
-            return -500
+            return -10
         return 1 - abs(self.state.theta)/self.theta_max - abs(self.state.x)/self.x_max
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
