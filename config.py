@@ -37,7 +37,7 @@ class Config:
         GAMMA = 0.9  # Discount rate
         LAMBDA = 0.85  # Trace decay
         EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.8  # Epislon decay rate
+        EPSILON_DECAY = 0.995  # Epislon decay rate
 
     class HanoiCriticConfig:
         # True if table based, false if using ANN function approximation
@@ -67,6 +67,6 @@ class Config:
         NETWORK_DIMENSIONS = [64, 50]
 
     class MainConfig:
-        EPISODES = 200
+        EPISODES = 700
         VISUALIZE = False
         DELAY = 20

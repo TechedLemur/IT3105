@@ -21,15 +21,14 @@ class PoleWorldAction(Action):
 class PoleWorldState(State):
     x: int
     theta: int
-    # dx: int
+    dx: int
     dtheta: int
 
     def as_one_hot(self) -> np.ndarray:
         one_hot_vector = np.zeros(
             Config.PoleWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
         )
-        one_hot_vector[PoleWorld.ONE_HOT_MAPPING[(
-            self.theta, self.dtheta)]] = 1
+        one_hot_vector[PoleWorld.ONE_HOT_MAPPING[(self.x, self.theta, self.dtheta)]] = 1
         return one_hot_vector
 
     def __hash__(self):
@@ -152,10 +151,12 @@ class PoleWorld(SimWorld):
 
     def __get_reward(self, final_state: bool, success: bool) -> int:
         if final_state and success:
-            return 20
+            return 1000
         elif final_state and not success:
-            return -10
-        return 1 - abs(self.state.theta)/self.theta_max - abs(self.state.x)/self.x_max
+            return -500
+        return (
+            1 - abs(self.state.theta) / self.theta_max - abs(self.state.x) / self.x_max
+        )
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
         return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
@@ -164,8 +165,7 @@ class PoleWorld(SimWorld):
         self.t += 1
         self.__update_state(action.F)
         final_state, success = self.__is_final_state()
-        self.external_state = self.convert_internal_to_external_state(
-            final_state)
+        self.external_state = self.convert_internal_to_external_state(final_state)
         reward = self.__get_reward(final_state, success)
         self.pole_positions.append(self.state.theta)
         self.cart_positions.append(self.state.x)
@@ -176,10 +176,9 @@ class PoleWorld(SimWorld):
         x_d = PoleWorld.find_nearest(self.x_discret, self.state.x)
         theta_d = PoleWorld.find_nearest(self.theta_discret, self.state.theta)
         dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
-        dtheta_d = PoleWorld.find_nearest(
-            self.dtheta_discret, self.state.dtheta)
+        dtheta_d = PoleWorld.find_nearest(self.dtheta_discret, self.state.dtheta)
         # return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
-        return PoleWorldState(final_state, x_d, theta_d, dtheta_d)
+        return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
 
     def get_state(self) -> PoleWorldState:
         return self.external_state
