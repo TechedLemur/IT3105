@@ -68,8 +68,9 @@ class HanoiSimulator():
             if not self.critic.is_table:
                 self.critic.update_weights()
 
-        if Config.MainConfig.VISUALIZE:  # Print the last solution
-            HanoiWorld.visualize_solution(self.solutions[-1])
+            if Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0:  # Print the last solution
+                print("Episode", episode)
+                HanoiWorld.visualize_solution(self.solutions[-1])
 
     def print_run(self, run_no: int):
         HanoiWorld.visualize_solution(
