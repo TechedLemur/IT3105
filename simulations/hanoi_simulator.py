@@ -123,4 +123,6 @@ class HanoiSimulator():
     def plot_learning(self):
         y = np.array(self.scores)
         sns.lineplot(data=y)
+        plt.xlabel('Episode')
+        plt.ylabel('Moves')
         plt.show()

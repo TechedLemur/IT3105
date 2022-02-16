@@ -79,4 +79,6 @@ class GamblerSimulator():
         x = np.array(x)
         y = np.array(y)
         sns.lineplot(x=x, y=y)
+        plt.xlabel('Money in wallet')
+        plt.ylabel('Amount to bet')
         plt.show()

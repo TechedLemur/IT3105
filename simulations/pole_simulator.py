@@ -79,9 +79,14 @@ class PoleSimulator:
     def print_run(self, run_no: int):
         plt.figure(figsize=(20, 10))
         plt.subplot(1, 2, 1)
+        plt.xlabel('Time')
+        plt.ylabel('Theta')
         sns.lineplot(data=self.solutions[run_no][0])
         plt.subplot(1, 2, 2)
+        plt.xlabel('Time')
+        plt.ylabel('X')
         sns.lineplot(data=self.solutions[run_no][1])
+
         plt.show()
 
     def do_greedy_episode(self, print_result=True):
@@ -144,4 +149,6 @@ class PoleSimulator:
     def plot_learning(self):
         y = np.array(self.scores)
         sns.lineplot(data=y)
+        plt.xlabel('Episode')
+        plt.ylabel('Time')
         plt.show()
