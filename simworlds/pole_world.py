@@ -188,9 +188,6 @@ class PoleWorld(SimWorld):
     def get_state(self) -> PoleWorldState:
         return self.external_state
 
-    def visualize_individual_solutions(self):
-        pass
-
     @staticmethod
     def find_nearest(array, value):
         idx = (np.abs(array - value)).argmin()

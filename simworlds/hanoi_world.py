@@ -148,5 +148,4 @@ class HanoiWorld(SimWorld):
             print(final)
             print()
 
-    def visualize_learning_progress(self):
-        pass
+   

@@ -17,7 +17,7 @@ class Critic():
             # Init table based
             self.V = {}
         else:
-            # Init neural network
+            # Init neural network using PyTorch
             dim = config.NETWORK_DIMENSIONS
             layers = [nn.Linear(inputNeurons, dim[0])]
             for i in range(len(dim)-1):
@@ -35,20 +35,16 @@ class Critic():
 
         self.e = {}  # Eligibility dictionary
 
-        self.current_states = set()
+        self.current_states = set()  # States in the current episode
 
     def calculate_td(self, state, new_state, reward: float) -> float:  # Step 4,5
         if self.is_table:
             self.add_if_new_state(new_state)
             self.e[state] = 1
             return reward + self.gamma * self.V[new_state] - self.V[state]
-        # start = timeit.default_timer()
-        # td = reward + self.gamma * self.model.predict(np.array([new_state.as_one_hot()]))[
-        #     0][0] - self.model.predict(np.array([state.as_one_hot()]))[0][0]
+        # Use ANN as function approximator
         td = reward + self.gamma * self.model(torch.tensor(
             new_state.as_one_hot())).item() - self.model(torch.tensor(state.as_one_hot())).item()
-        # stop = timeit.default_timer()
-        # print('Time td: ', stop - start)
         return td
 
     # Updates V(s) and eligibility traces
@@ -61,17 +57,17 @@ class Critic():
             x = state.as_one_hot()
             y = reward + self.gamma * \
                 self.model(torch.tensor(new_state.as_one_hot())).item()
-
+            # Store training data for use after the episode
             self.train_x.append(x)
             self.train_y.append(y)
 
-    # Resets the critic to be ready for new episode the state is the initial state of the system
+    # Resets the critic to be ready for new episode, the state is the initial state of the system
 
     def reset_episode(self, state):
         if self.is_table:
             self.current_states = set()
             self.add_if_new_state(state)
-            # Set all values to 0. Maybe it also works to just re-init til dict to an empty one
+            # Set all values to 0
             self.e = {x: 0 for x in self.e}
             self.e[state] = 1  # Set current to 1
         else:
@@ -79,14 +75,15 @@ class Critic():
             self.train_y = []
 
     def update_weights(self):
-
-        for x, y in zip(self.train_x, self.train_y):  # TODO?: Add minibatching
+        # Run backwards pass and update weights
+        for x, y in zip(self.train_x, self.train_y):
             self.optimizer.zero_grad()
             y_pred = self.model(torch.tensor(x))
             loss = self.loss_function(y_pred, torch.tensor([y]))
             loss.backward()
             self.optimizer.step()
 
+    # Adds the state the V(s) dictionary if it is not present
     def add_if_new_state(self, state):
         if self.is_table:
             if state not in self.V.keys():

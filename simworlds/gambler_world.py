@@ -75,11 +75,4 @@ class GamblerWorld(SimWorld):
         reward = self.__get_reward()
         return (self.state, reward)
 
-    def visualize_individual_solutions(self):
-        plt.plot(range(1, 100), range(1, 100))
-        plt.xlabel("State")
-        plt.ylabel("Wager")
-        plt.show()
-
-    def visualize_learning_progress(self):
-        pass
+   

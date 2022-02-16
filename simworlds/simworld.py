@@ -29,5 +29,4 @@ class SimWorld(ABC):
     def do_action(self, action: Action) -> Tuple[State, int]:
         pass
 
-    def visualize_learning_progress(self):
-        pass
+ 
