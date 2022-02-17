@@ -35,7 +35,7 @@ class HanoiWorldAction(Action):
 class HanoiWorldState(State):
     state: List[List[int]]
 
-    def as_one_hot(self) -> np.ndarray:
+    def as_vector(self) -> np.ndarray:
         one_hot_state = np.zeros(
             Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
         )

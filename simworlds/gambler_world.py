@@ -19,12 +19,8 @@ class GamblerWorldAction(Action):
 class GamblerWorldState(State):
     units: int
 
-    def as_one_hot(self):
-        units_one_hot = np.zeros(
-            Config.GamblerWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
-        )
-        units_one_hot[self.units] = 1
-        return units_one_hot
+    def as_vector(self):
+        return np.array([self.units], dtype=np.float32)
 
     def __hash__(self):
         return hash(repr(self))

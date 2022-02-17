@@ -24,13 +24,8 @@ class PoleWorldState(State):
     dx: int
     dtheta: int
 
-    def as_one_hot(self) -> np.ndarray:
-        one_hot_vector = np.zeros(
-            Config.PoleWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
-        )
-        one_hot_vector[PoleWorld.ONE_HOT_MAPPING[(
-            self.x, self.theta, self.dx, self.dtheta)]] = 1
-        return one_hot_vector
+    def as_vector(self) -> np.ndarray:
+        return np.array([self.x, self.theta, self.dx, self.dtheta], dtype=np.float32)
 
     def __hash__(self):
         return hash(repr(self))
@@ -47,21 +42,6 @@ class InternalState:
 
 
 class PoleWorld(SimWorld):
-
-    # Create mapping fron external state -> one hot encoded external state
-    ONE_HOT_MAPPING = dict(
-        zip(
-            list(
-                itertools.product(
-                    range(Config.PoleWorldConfig.DISCRETIZATION),
-                    range(Config.PoleWorldConfig.DISCRETIZATION),
-                    range(Config.PoleWorldConfig.DISCRETIZATION),
-                    range(Config.PoleWorldConfig.DISCRETIZATION)
-                )
-            ),
-            list(range(Config.PoleWorldConfig.ONE_HOT_LENGTH)),
-        )
-    )
 
     def __init__(self):
         self.L = Config.PoleWorldConfig.POLE_LENGTH  # [m]
@@ -216,12 +196,12 @@ class PoleWorld(SimWorld):
         """
         Discretizes the current internal state. For example 0.21 -> 8. The integer here represents an index.
         """
+        # For the neural network critic this step could possibly be bypassed.
         x_d = PoleWorld.find_nearest(self.x_discret, self.state.x)
         theta_d = PoleWorld.find_nearest(self.theta_discret, self.state.theta)
         dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
         dtheta_d = PoleWorld.find_nearest(
             self.dtheta_discret, self.state.dtheta)
-        # return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
         return PoleWorldState(final_state, x_d, theta_d, dx_d, dtheta_d)
 
     def get_state(self) -> PoleWorldState:

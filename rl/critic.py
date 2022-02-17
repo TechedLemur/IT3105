@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 
 
-class Critic():
-
+class Critic:
     def __init__(self, config, inputNeurons) -> None:
 
         # True if table based, false if using ANN function approximation
@@ -20,14 +19,13 @@ class Critic():
             # Init neural network using PyTorch
             dim = config.NETWORK_DIMENSIONS
             layers = [nn.Linear(inputNeurons, dim[0])]
-            for i in range(len(dim)-1):
-                layers.append(nn.Linear(dim[i], dim[i+1]))
+            for i in range(len(dim) - 1):
+                layers.append(nn.Linear(dim[i], dim[i + 1]))
             layers.append(nn.Linear(dim[-1], 1))
 
             self.model = nn.Sequential(*layers)
 
-            self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=self.nn_alpha)
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.nn_alpha)
 
             self.loss_function = torch.nn.MSELoss()
             self.train_x = []
@@ -43,20 +41,27 @@ class Critic():
             self.e[state] = 1
             return reward + self.gamma * self.V[new_state] - self.V[state]
         # Use ANN as function approximator
-        td = reward + self.gamma * self.model(torch.tensor(
-            new_state.as_one_hot())).item() - self.model(torch.tensor(state.as_one_hot())).item()
+        td = (
+            reward
+            + self.gamma * self.model(torch.tensor(new_state.as_vector())).item()
+            - self.model(torch.tensor(state.as_vector())).item()
+        )
         return td
 
     # Updates V(s) and eligibility traces
-    def update(self, td: float, state=None, new_state=None, reward: float = 0):  # Step 6
+    def update(
+        self, td: float, state=None, new_state=None, reward: float = 0
+    ):  # Step 6
         if self.is_table:
             for state in self.current_states:
                 self.V[state] += self.alpha * td * self.e[state]
-                self.e[state] *= self.gamma*self.lambda_lr
+                self.e[state] *= self.gamma * self.lambda_lr
         else:
-            x = state.as_one_hot()
-            y = reward + self.gamma * \
-                self.model(torch.tensor(new_state.as_one_hot())).item()
+            x = state.as_vector()
+            y = (
+                reward
+                + self.gamma * self.model(torch.tensor(new_state.as_vector())).item()
+            )
             # Store training data for use after the episode
             self.train_x.append(x)
             self.train_y.append(y)
@@ -88,4 +93,4 @@ class Critic():
         if self.is_table:
             if state not in self.V.keys():
                 # Initialize V(s) with small random values
-                self.V[state] = random.uniform(-1., 1.)
+                self.V[state] = random.uniform(-1.0, 1.0)
