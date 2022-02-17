@@ -37,9 +37,17 @@ class GamblerWorld(SimWorld):
         self.set_initial_world_state()
 
     def set_initial_world_state(self):
+        """Sets the world to its initial state.
+        """
         self.state = GamblerWorldState(False, randint(1, 99))
 
     def __get_reward(self) -> int:
+        """Get the reward for the current state. Basically just punish for losing and rewarding for winning, else nothing.
+
+
+        Returns:
+            int: Reward for the current state.
+        """
         if self.state.units == 0:
             return -1000
         elif self.state.units == 100:
@@ -48,6 +56,12 @@ class GamblerWorld(SimWorld):
             return 0
 
     def get_legal_actions(self) -> List[GamblerWorldAction]:
+        """Get all legal actions for the current state.
+        The rule is that the gambler can only bet up to his current money.
+
+        Returns:
+            List[GamblerWorldAction]: All possible actions in the current state.
+        """
         return list(
             GamblerWorldAction(i)
             for i in range(
@@ -55,10 +69,24 @@ class GamblerWorld(SimWorld):
             )
         )
 
-    def get_state(self):
+    def get_state(self) -> GamblerWorldState:
+        """Get the current state.
+
+        Returns:
+            GamblerWorldState: Current state.
+        """
         return self.state
 
     def do_action(self, action: GamblerWorldAction) -> Tuple[GamblerWorldState, int]:
+        """Do an action (a bet).
+
+        Args:
+            action (GamblerWorldAction): The action to perform (the bet).
+
+        Returns:
+            Tuple[GamblerWorldState, int]: New state and its reward.
+        """
+
         # A successful bet is done by sampling a random number in range [1, 100]
         # If it is less than the probability of success pw ([0, 100]) then it is a success.
         random_number = randint(1, 100)
@@ -75,4 +103,3 @@ class GamblerWorld(SimWorld):
         reward = self.__get_reward()
         return (self.state, reward)
 
-   
