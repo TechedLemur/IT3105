@@ -1,15 +1,15 @@
 class Config:
     class HanoiWorldConfig:
         DISCS = 3  # Range [2, 6]
-        PEGS = 4  # Range [3, 5]
-        ONE_HOT_LENGTH = (
-            PEGS * DISCS
+        PEGS = 3  # Range [3, 5]
+        VECTOR_LENGTH = (
+            PEGS * DISCS * DISCS
         )  # Number of possible states is M^N (M number of pegs, N number of discs)
         MAX_STEPS = PEGS * DISCS * 20
 
     class GamblerWorldConfig:
         WIN_PROBABILITY = 0.55  # Range [0, 1.0]
-        ONE_HOT_LENGTH = 1
+        VECTOR_LENGTH = 101
         MAX_STEPS = 200
 
     class PoleWorldConfig:
@@ -18,7 +18,7 @@ class Config:
         GRAVITY = -15  # Range [-5, -15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
         DISCRETIZATION = 4
-        ONE_HOT_LENGTH = 4
+        VECTOR_LENGTH = 4
 
     class HanoiActorConfig:
         ALPHA = 0.02  # Learning rate

@@ -8,15 +8,16 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-class GamblerSimulator():
-
+class GamblerSimulator:
     def __init__(self) -> None:
         self.reset()
 
     def reset(self):
         self.actor = Actor(Config.GamblerActorConfig)
-        self.critic = Critic(config=Config.GamblerCriticConfig,
-                             inputNeurons=Config.GamblerWorldConfig.ONE_HOT_LENGTH)
+        self.critic = Critic(
+            config=Config.GamblerCriticConfig,
+            inputNeurons=Config.GamblerWorldConfig.VECTOR_LENGTH,
+        )
         self.world = GamblerWorld()
 
     def run(self, episodes=Config.MainConfig.EPISODES, verbose=False):
@@ -44,12 +45,12 @@ class GamblerSimulator():
                     flag = True
                 else:
                     new_action = self.actor.select_action(
-                        new_state, legal_actions)  # Step 2
+                        new_state, legal_actions
+                    )  # Step 2
 
                 self.actor.update_eligibility(state, action)  # Step 3
 
-                td = self.critic.calculate_td(
-                    state, new_state, reward)  # step 4,5
+                td = self.critic.calculate_td(state, new_state, reward)  # step 4,5
 
                 # step 6
                 self.critic.update(td, state=state, new_state=new_state)
@@ -64,7 +65,9 @@ class GamblerSimulator():
             if not self.critic.is_table:
                 self.critic.update_weights()
 
-            if Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0:  # Print the last solution
+            if (
+                Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0
+            ):  # Print the last solution
                 print("Episode", episode)
                 self.plot_greedy_strategy()
 
@@ -79,6 +82,6 @@ class GamblerSimulator():
         x = np.array(x)
         y = np.array(y)
         sns.lineplot(x=x, y=y)
-        plt.xlabel('Money in wallet')
-        plt.ylabel('Amount to bet')
+        plt.xlabel("Money in wallet")
+        plt.ylabel("Amount to bet")
         plt.show()

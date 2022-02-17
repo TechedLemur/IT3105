@@ -7,20 +7,6 @@ import numpy as np
 import itertools
 import string
 
-# Helper for one-hot encoding
-
-
-def generate_dictionary():
-    """Generates a dictionary with string representation of a state as key and the index it should map to as value.
-    See: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
-    """
-    pegs = Config.HanoiWorldConfig.PEGS
-    s = list(string.ascii_lowercase[:pegs])
-
-    product = [p for p in itertools.product(s, repeat=Config.HanoiWorldConfig.DISCS)]
-    d = dict(zip(product, range(len(product))))
-    return d
-
 
 @dataclass
 class HanoiWorldAction(Action):
@@ -36,38 +22,31 @@ class HanoiWorldState(State):
     state: List[List[int]]
 
     def as_vector(self) -> np.ndarray:
-        n, m = Config.HanoiWorldConfig.PEGS, Config.HanoiWorldConfig.DISCS
-        v = np.zeros((n, m), dtype=np.float32)
-
-        for i, p in enumerate(self.state):
-            l = len(p)-1
-            for j in range(0, l+1):
-                v[i, j] = p[l-j]+1
-        return v.flatten()
-
-    def get_string_representation(self) -> str:
-        """Generate a string representation for the current state.
-        See here: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
-        For example on the form "aaa" for the initial state in a 3x3 world.
+        """Create a bitencoded version of the HanoiWorld-state.
 
         Returns:
-            str: String representation of its state.
+            np.ndarray: Bit-encoded vector.
         """
-        s = ["" for _ in range(Config.HanoiWorldConfig.DISCS)]
+        n, m = Config.HanoiWorldConfig.PEGS, Config.HanoiWorldConfig.DISCS
+        v = np.zeros(
+            (n, m, m), dtype=np.float32
+        )  # Peg, place on peg and one-hot encoded disc
 
-        for i in range(len(self.state)):
-            for l in self.state[i]:
-                s[l - 1] = chr(i + 97)
-        return tuple(s)
+        for i, p in enumerate(self.state):
+            l = len(p) - 1
+            for j in range(0, l + 1):
+                one_hot = np.zeros(
+                    Config.HanoiWorldConfig.DISCS
+                )  # One hot encode the disc
+                one_hot[p[l - j]] = 1
+                v[i, j] = one_hot
+        return v.flatten()
 
     def __hash__(self):
         return hash(repr(self))
 
 
 class HanoiWorld(SimWorld):
-
-    ONE_HOT_MAPPING = generate_dictionary()
-
     def __init__(self):
         self.nr_pegs = Config.HanoiWorldConfig.PEGS
         self.nr_discs = Config.HanoiWorldConfig.DISCS

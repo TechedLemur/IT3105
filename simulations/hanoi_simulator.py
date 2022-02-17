@@ -7,8 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-class HanoiSimulator():
-
+class HanoiSimulator:
     def __init__(self) -> None:
         self.reset()
 
@@ -16,8 +15,10 @@ class HanoiSimulator():
         self.scores = []
         self.solutions = []
         self.actor = Actor(Config.HanoiActorConfig)
-        self.critic = Critic(config=Config.HanoiCriticConfig,
-                             inputNeurons=Config.HanoiWorldConfig.ONE_HOT_LENGTH)
+        self.critic = Critic(
+            config=Config.HanoiCriticConfig,
+            inputNeurons=Config.HanoiWorldConfig.VECTOR_LENGTH,
+        )
         self.world = HanoiWorld()
 
     def run(self, episodes=Config.MainConfig.EPISODES, verbose=False):
@@ -48,12 +49,12 @@ class HanoiSimulator():
                     self.solutions.append(self.world.state_history)
                 else:
                     new_action = self.actor.select_action(
-                        new_state, legal_actions)  # Step 2
+                        new_state, legal_actions
+                    )  # Step 2
 
                 self.actor.update_eligibility(state, action)  # Step 3
 
-                td = self.critic.calculate_td(
-                    state, new_state, reward)  # step 4,5
+                td = self.critic.calculate_td(state, new_state, reward)  # step 4,5
 
                 # step 6
                 self.critic.update(td, state=state, new_state=new_state)
@@ -68,7 +69,9 @@ class HanoiSimulator():
             if not self.critic.is_table:
                 self.critic.update_weights()
 
-            if Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0:  # Print the last solution
+            if (
+                Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0
+            ):  # Print the last solution
                 print("Episode", episode)
                 HanoiWorld.visualize_solution(self.solutions[-1])
 
@@ -76,8 +79,7 @@ class HanoiSimulator():
         if not self.solutions:
             print("No solutions to visualize :(")
             return
-        HanoiWorld.visualize_solution(
-            self.solutions[run_no])
+        HanoiWorld.visualize_solution(self.solutions[run_no])
 
     def do_greedy_episode(self, print_result=True):
         self.actor.set_epsilon(0)
@@ -111,7 +113,8 @@ class HanoiSimulator():
                 self.solutions.append(self.world.state_history)
             else:
                 new_action = self.actor.select_action(
-                    new_state, legal_actions)  # Step 2
+                    new_state, legal_actions
+                )  # Step 2
 
             self.actor.update_eligibility(state, action)  # Step 3
 
@@ -127,6 +130,6 @@ class HanoiSimulator():
     def plot_learning(self):
         y = np.array(self.scores)
         sns.lineplot(data=y)
-        plt.xlabel('Episode')
-        plt.ylabel('Moves')
+        plt.xlabel("Episode")
+        plt.ylabel("Moves")
         plt.show()

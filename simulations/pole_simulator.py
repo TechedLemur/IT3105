@@ -17,7 +17,7 @@ class PoleSimulator:
         self.actor = Actor(Config.PoleActorConfig)
         self.critic = Critic(
             config=Config.PoleCriticConfig,
-            inputNeurons=Config.PoleWorldConfig.ONE_HOT_LENGTH,
+            inputNeurons=Config.PoleWorldConfig.VECTOR_LENGTH,
         )
         self.world = PoleWorld()
 
@@ -55,8 +55,7 @@ class PoleSimulator:
 
                 self.actor.update_eligibility(state, action)  # Step 3
 
-                td = self.critic.calculate_td(
-                    state, new_state, reward)  # step 4,5
+                td = self.critic.calculate_td(state, new_state, reward)  # step 4,5
 
                 # step 6
                 self.critic.update(td, state=state, new_state=new_state)
@@ -72,19 +71,21 @@ class PoleSimulator:
             if not self.critic.is_table:
                 self.critic.update_weights()
 
-            if Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0:  # Print the last solution
+            if (
+                Config.MainConfig.VISUALIZE and episode % Config.MainConfig.DELAY == 0
+            ):  # Print the last solution
                 print("Episode", episode)
                 self.print_run(-1)
 
     def print_run(self, run_no: int):
         plt.figure(figsize=(20, 10))
         plt.subplot(1, 2, 1)
-        plt.xlabel('Time')
-        plt.ylabel('Theta')
+        plt.xlabel("Time")
+        plt.ylabel("Theta")
         sns.lineplot(data=self.solutions[run_no][0])
         plt.subplot(1, 2, 2)
-        plt.xlabel('Time')
-        plt.ylabel('X')
+        plt.xlabel("Time")
+        plt.ylabel("X")
         sns.lineplot(data=self.solutions[run_no][1])
 
         plt.show()
@@ -149,6 +150,6 @@ class PoleSimulator:
     def plot_learning(self):
         y = np.array(self.scores)
         sns.lineplot(data=y)
-        plt.xlabel('Episode')
-        plt.ylabel('Time')
+        plt.xlabel("Episode")
+        plt.ylabel("Time")
         plt.show()

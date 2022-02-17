@@ -20,7 +20,11 @@ class GamblerWorldState(State):
     units: int
 
     def as_vector(self):
-        return np.array([self.units], dtype=np.float32)
+        units_one_hot = np.zeros(
+            Config.GamblerWorldConfig.VECTOR_LENGTH, dtype=np.float32
+        )
+        units_one_hot[self.units] = 1
+        return units_one_hot
 
     def __hash__(self):
         return hash(repr(self))

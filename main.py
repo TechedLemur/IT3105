@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 from simworlds.gambler_world import GamblerWorld, GamblerWorldAction, GamblerWorldState
-from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction, generate_dictionary
+from simworlds.hanoi_world import HanoiWorld, HanoiWorldAction
 from simworlds.simworld import Action, State
 from simworlds.pole_world import PoleWorld, PoleWorldAction, PoleWorldState
 
