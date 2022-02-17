@@ -8,12 +8,18 @@ from simworlds.pole_world import PoleWorld, PoleWorldAction, PoleWorldState
 def test_hanoi_world():
     hw = HanoiWorld()
     state = hw.get_state()
-    print(state.as_one_hot())
+    print(state.as_vector())
     ha = HanoiWorldAction(0, 1)
     hw.do_action(ha)
     state, _ = hw.do_action(ha)
-    print(state.as_one_hot())
-    HanoiWorld.visualize_solution([state.state], 3)
+    print(state)
+    print(state.as_vector())
+    ha = HanoiWorldAction(1, 2)
+    hw.do_action(ha)
+    state, _ = hw.do_action(ha)
+    print(state)
+    print(state.as_vector())
+    # HanoiWorld.visualize_solution([state.state])
 
 
 def test_gambler_world():
@@ -37,5 +43,5 @@ def test_pole_world():
 
 
 if __name__ == "__main__":
-    #test_hanoi_world()
-    test_pole_world()
+    test_hanoi_world()
+    # test_pole_world()

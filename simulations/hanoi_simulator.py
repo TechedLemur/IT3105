@@ -73,6 +73,9 @@ class HanoiSimulator():
                 HanoiWorld.visualize_solution(self.solutions[-1])
 
     def print_run(self, run_no: int):
+        if not self.solutions:
+            print("No solutions to visualize :(")
+            return
         HanoiWorld.visualize_solution(
             self.solutions[run_no])
 

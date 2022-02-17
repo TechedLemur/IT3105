@@ -36,13 +36,14 @@ class HanoiWorldState(State):
     state: List[List[int]]
 
     def as_vector(self) -> np.ndarray:
-        one_hot_state = np.zeros(
-            Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=np.float32
-        )
-        s = self.get_string_representation()
-        one_hot_state[HanoiWorld.ONE_HOT_MAPPING[s]] = 1
+        n, m = Config.HanoiWorldConfig.PEGS, Config.HanoiWorldConfig.DISCS
+        v = np.zeros((n, m), dtype=np.float32)
 
-        return one_hot_state
+        for i, p in enumerate(self.state):
+            l = len(p)-1
+            for j in range(0, l+1):
+                v[i, j] = p[l-j]+1
+        return v.flatten()
 
     def get_string_representation(self) -> str:
         """Generate a string representation for the current state.
