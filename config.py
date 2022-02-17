@@ -2,7 +2,9 @@ class Config:
     class HanoiWorldConfig:
         DISCS = 3  # Range [2, 6]
         PEGS = 3  # Range [3, 5]
-        ONE_HOT_LENGTH = PEGS ** DISCS
+        ONE_HOT_LENGTH = (
+            PEGS ** DISCS
+        )  # Number of possible states is M^N (M number of pegs, N number of discs)
         MAX_STEPS = PEGS * DISCS * 20
 
     class GamblerWorldConfig:

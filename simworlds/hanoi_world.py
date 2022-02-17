@@ -37,7 +37,6 @@ class HanoiWorldState(State):
     state: List[List[int]]
 
     def as_one_hot(self) -> np.ndarray:
-        # Number of possible states is M^N (M number of pegs, N number of discs)
         one_hot_state = np.zeros(
             Config.HanoiWorldConfig.ONE_HOT_LENGTH, dtype=np.float32)
         s = self.get_string_representation()
@@ -45,7 +44,14 @@ class HanoiWorldState(State):
 
         return one_hot_state
 
-    def get_string_representation(self):
+    def get_string_representation(self)->str:
+        """Generate a string representation for the current state.
+        See here: https://en.wikipedia.org/wiki/Tower_of_Hanoi#/media/File:Tower_of_hanoi_graph.svg
+        For example on the form "aaa" for the initial state in a 3x3 world.
+
+        Returns:
+            str: String representation of its state.
+        """
         s = ["" for _ in range(Config.HanoiWorldConfig.DISCS)]
 
         for i in range(len(self.state)):

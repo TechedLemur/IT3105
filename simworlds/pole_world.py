@@ -94,6 +94,8 @@ class PoleWorld(SimWorld):
         self.set_initial_world_state()
 
     def set_initial_world_state(self):
+        """Sets the world to its initial state.
+        """
         self.state = InternalState(0, 0, 0, uniform(-0.21, 0.21), 0, 0)
         self.external_state = self.convert_internal_to_external_state(False)
         self.pole_positions = [self.state.theta]
@@ -102,6 +104,8 @@ class PoleWorld(SimWorld):
         self.success = False
 
     def __update_state(self, F: float):
+        """Update the world state according to the state equations given to us.
+        """
         ddtheta = (
             self.g * sin(self.state.theta)
             + cos(self.state.theta)
@@ -134,7 +138,12 @@ class PoleWorld(SimWorld):
 
         self.state = InternalState(x, dx, ddx, theta, dtheta, ddtheta)
 
-    def __within_limits(self):
+    def __within_limits(self) -> bool:
+        """Check if cart and pole is within their limits.
+
+        Returns:
+            bool: If the cart and pole is within their respective limits.
+        """
         return (
             self.state.theta >= -self.theta_max
             and self.state.theta <= self.theta_max
@@ -143,6 +152,11 @@ class PoleWorld(SimWorld):
         )
 
     def __is_final_state(self) -> Tuple[bool, bool]:
+        """Check if final state and if success or fail.
+
+        Returns:
+            Tuple[bool, bool]: If it is the final state and whether it was a success/fail.
+        """
         if self.t == self.T and self.__within_limits():
             self.success = True
             return True, True
@@ -152,6 +166,15 @@ class PoleWorld(SimWorld):
             return False, False
 
     def __get_reward(self, final_state: bool, success: bool) -> int:
+        """Get the reward for this state.
+
+        Args:
+            final_state (bool): If final state
+            success (bool): If success or fail
+
+        Returns:
+            int: Reward based on final state, success/fail and current internal state.
+        """
         if final_state and success:
             return 1000
         elif final_state and not success:
@@ -162,9 +185,22 @@ class PoleWorld(SimWorld):
         )
 
     def get_legal_actions(self) -> List[PoleWorldAction]:
+        """Get the two legal actions.
+
+        Returns:
+            List[PoleWorldAction]: The two legal actions.
+        """
         return [PoleWorldAction(self.F), PoleWorldAction(-self.F)]
 
     def do_action(self, action: PoleWorldAction) -> Tuple[PoleWorldState, int]:
+        """Do an a action and return the new state with reward.
+
+        Args:
+            action (PoleWorldAction): Action to perform.
+
+        Returns:
+            Tuple[PoleWorldState, int]: New state and reward.
+        """
         self.t += 1
         self.__update_state(action.F)
         final_state, success = self.__is_final_state()
@@ -177,6 +213,9 @@ class PoleWorld(SimWorld):
         return (self.external_state, reward)
 
     def convert_internal_to_external_state(self, final_state: bool) -> PoleWorldState:
+        """
+        Discretizes the current internal state. For example 0.21 -> 8. The integer here represents an index.
+        """
         x_d = PoleWorld.find_nearest(self.x_discret, self.state.x)
         theta_d = PoleWorld.find_nearest(self.theta_discret, self.state.theta)
         dx_d = PoleWorld.find_nearest(self.dx_discret, self.state.dx)
@@ -190,5 +229,6 @@ class PoleWorld(SimWorld):
 
     @staticmethod
     def find_nearest(array, value):
+        """Find the index of the closest value in the array."""
         idx = (np.abs(array - value)).argmin()
         return idx
