@@ -23,6 +23,10 @@ class HanoiWorldState(State):
 
     def as_vector(self) -> np.ndarray:
         """Create a bitencoded version of the HanoiWorld-state.
+        For example [[0, 1], [], []]
+        Would become:
+        [[0 1], [1, 0], [[0, 0], [0, 0]], [[0, 0], [0, 0]]]
+        -> [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Returns:
             np.ndarray: Bit-encoded vector.
