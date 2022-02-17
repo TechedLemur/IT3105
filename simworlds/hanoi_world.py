@@ -25,7 +25,7 @@ class HanoiWorldState(State):
         """Create a bitencoded version of the HanoiWorld-state.
         For example [[0, 1], [], []]
         Would become:
-        [[0 1], [1, 0], [[0, 0], [0, 0]], [[0, 0], [0, 0]]]
+        [[[0, 1], [1, 0]], [[0, 0], [0, 0]], [[0, 0], [0, 0]]]
         -> [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
         Returns:
@@ -75,8 +75,8 @@ class HanoiWorld(SimWorld):
             int: _description_
         """
         if self.__is_final_state():  # Give a lot of reward if it managed to solve it.
-            return 15
-        return -1  # Punish it for every move. (Should hopefully minimize moves.)
+            return Config.HanoiWorldConfig.FINAL_REWARD
+        return -2  # Punish it for every move. (Should hopefully minimize moves.)
 
     def __is_final_state(self) -> bool:
         """Check if final state.

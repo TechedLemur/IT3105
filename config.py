@@ -6,6 +6,7 @@ class Config:
             PEGS * DISCS * DISCS
         )  # Number of possible states is M^N (M number of pegs, N number of discs)
         MAX_STEPS = PEGS * DISCS * 20
+        FINAL_REWARD = 18  # 100 for 4 discs, 18 for 3 discs
 
     class GamblerWorldConfig:
         WIN_PROBABILITY = 0.55  # Range [0, 1.0]
@@ -15,17 +16,17 @@ class Config:
     class PoleWorldConfig:
         POLE_LENGTH = 0.5  # Range [0.1, 1.0]
         POLE_MASS = 0.25  # Range [0.05, 0.5]
-        GRAVITY = -15  # Range [-5, -15]
+        GRAVITY = -9.81  # Range [-5, -15]
         TIMESTEP = 0.05  # Range [0.01, 0.1]
         DISCRETIZATION = 4
         VECTOR_LENGTH = 4
 
     class HanoiActorConfig:
-        ALPHA = 0.02  # Learning rate
-        GAMMA = 0.93  # Discount rate
+        ALPHA = 0.015  # Learning rate
+        GAMMA = 0.95  # Discount rate
         LAMBDA = 0.97  # Trace decay
         EPSILON = 0.5  # Initial epsilon for epsilon-greedy actor
-        EPSILON_DECAY = 0.99  # Epislon decay rate
+        EPSILON_DECAY = 0.988  # Epislon decay rate
 
     class GamblerActorConfig:
         ALPHA = 0.04  # Learning rate
@@ -45,14 +46,14 @@ class Config:
         # True if table based, false if using ANN function approximation
         IS_TABLE = False
         ALPHA = 0.02  # Learning rate
-        NN_ALPHA = 0.0005  # Neural network LR
+        NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.95  # Discount rate
         LAMBDA = 0.98  # Trace decay
         NETWORK_DIMENSIONS = [100, 64, 40]
 
     class GamblerCriticConfig:
         # True if table based, false if using ANN function approximation
-        IS_TABLE = False
+        IS_TABLE = True
         ALPHA = 0.02  # Learning rate
         NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.91  # Discount rate
@@ -61,7 +62,7 @@ class Config:
 
     class PoleCriticConfig:
         # True if table based, false if using ANN function approximation
-        IS_TABLE = False
+        IS_TABLE = True
         ALPHA = 0.02  # Learning rate
         NN_ALPHA = 0.001  # Neural network LR
         GAMMA = 0.9  # Discount rate
@@ -69,6 +70,6 @@ class Config:
         NETWORK_DIMENSIONS = [128, 64, 32]
 
     class MainConfig:
-        EPISODES = 200
+        EPISODES = 300
         VISUALIZE = False
         DELAY = 20
