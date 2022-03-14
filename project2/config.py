@@ -10,6 +10,8 @@ class Config:
 # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
     episodes = 100
     search_games = 100
+    c = 1.0
+    
 
 # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
 # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.

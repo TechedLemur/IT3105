@@ -1,0 +1,84 @@
+from simworlds.simworld import Action, State
+import random
+from config import Config
+
+
+class Actor():
+
+    def __init__(self, config) -> None:
+        self.alpha = config.ALPHA
+        self.gamma = config.GAMMA
+        self.lambda_lr = config.LAMBDA  # lambda is a taken keyword in python
+        self.epsilon = config.EPSILON
+        self.epsilon_decay = config.EPSILON_DECAY
+        self.e = {}  # Eligibility traces
+        self.policy = {}
+        self.saps_in_episode = set()
+        self.possible_states = set()
+
+    # Updates the policy and eligibility
+
+    def update(self, td_error: float) -> None:  # Step 6
+
+        for key in self.saps_in_episode:
+            self.policy[key] += self.alpha * td_error * self.e[key]
+            self.e[key] *= self.gamma * \
+                self.lambda_lr  # Discount eligibility
+
+    # Do an action based on a state and current policy
+
+    def select_action(self, state, legal_actions) -> Action:  # Step 2,3
+
+        # Select the actions connected to the state
+        filtered = dict(
+            filter(lambda x: x[0][0] == state, self.policy.items()))
+
+        # Do a random move with the probability epsilon or if Pi(s*,a) is empty for s*
+        if not filtered or random.random() <= self.epsilon:
+            action = legal_actions[random.randint(0, len(legal_actions)-1)]
+
+            # Set Pi(s,a) = 0 for the newly discovered actions and state
+            if not filtered:
+                for a in legal_actions:
+                    self.fill_if_new_SAP(state, a)
+
+        else:
+            # Get the action from the maximum value
+            action = max(filtered, key=filtered.get)[1]
+
+        self.saps_in_episode.add((state, action))
+
+        return action
+
+    # Set e(s,a)=1
+    def update_eligibility(self, state, action):
+        self.e[(state, action)] = 1
+
+    def set_epsilon(self, epsilon):
+        self.epsilon = epsilon
+
+    # Reset the parameters for a new episode
+    def reset_episode(self):
+        self.saps_in_episode = set()
+        self.e = {x: 0 for x in self.e}
+        self.epsilon *= self.epsilon_decay
+        if self.epsilon < 0.0001:
+            self.epsilon = 0
+
+    # Add SAP to dictionaries if not discovered before
+    def fill_if_new_SAP(self, state, action):
+        if (state, action) not in self.policy.keys():
+            self.possible_states.add(state)
+            self.policy[(state, action)] = 0
+            self.e[(state, action)] = 0
+
+    # Returns the greedy policy
+    def get_greedy_policy(self):
+        p = {}
+        for state in self.possible_states:
+            # Select the actions connected to the state
+            filtered = dict(
+                filter(lambda x: x[0][0] == state, self.policy.items()))
+            action = max(filtered, key=filtered.get)[1]
+            p[state] = action
+        return p
