@@ -11,7 +11,7 @@ class Config:
     episodes = 100
     search_games = 100
     c = 1.0
-    
+
 
 # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
 # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
@@ -33,3 +33,8 @@ class Config:
 # The number of games, G, to be played between any two ANET-based agents that meet during the round-robin
 # play of the TOPP.
     G = 50
+
+    # Nim config
+
+    K = 4
+    N = 15

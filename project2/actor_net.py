@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
+import random
 
 
 class ActorNet:
@@ -26,7 +27,7 @@ class ActorNet:
         self.model = keras.Model(input_layer, output_layer, name="ANET")
 
         self.model.compile(
-            optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
+            optimizer="adam", loss=keras.losses.CategoricalCrossentropy(), metrics=["accuracy"]
         )
 
     def select_action(self, world: GameWorld) -> Action:
@@ -38,13 +39,27 @@ class ActorNet:
         # Rescale
 
         legal_actions = world.get_legal_actions()
+
+        # While working on MCTS, just return random action
+        return random.choice(legal_actions)
+
         all_actions = (
             world.get_all_actions()
-        )  # An array with all possible actions in the game (legal and not)
+        )  # A list with all possible actions in the game (legal and not)
 
-        probs = self.model.predict(world.get_state().NN_representation)
+        probs = self.model.predict(world.get_state().as_vector())
 
-        mask = np.isin(all_actions, legal_actions)
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
+
+        probs *= mask
+
+        probs = probs / np.sum(probs)
+
+        new_action_index = np.argmax(probs)
+
+        # TODO: Decide if we just return the 1-hot index or the actual action
+        new_action = all_actions[new_action_index]
 
     def train(self, x_train, y_train):
 
