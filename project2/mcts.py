@@ -18,6 +18,11 @@ class MCTSNode:
         self.player = 0
 
     def is_final_state(self) -> Tuple[bool, int]:
+        """_summary_
+
+        Returns:
+            Tuple[bool, int]: Returns both if this is a final game state and if so the game result (z_L). Either -1 (lose), 0 (draw) or +1 (win).
+        """
         pass
 
 
@@ -42,9 +47,9 @@ class MCTS:
         self.visited: List[Tuple[State, Action]] = []
         for i in range(cfg.search_games):
             self.iteration = i
-            leaf_node = self.apply_tree_policy()
-            path, z_L = self.do_rollout()
-            self.backpropagate(path, leaf_node)
+            self.apply_tree_policy()
+            self.do_rollout()
+            self.backpropagate()
 
     def backpropagate(self) -> None:
         """Backpropagate after a rollout from a leaf-node.
@@ -59,41 +64,33 @@ class MCTS:
                 * sum(self.d_s_a_i[(state, action)] * self.V_i)
             )
 
-    def do_rollout(self, start_node: MCTSNode) -> List[Action]:
+    def do_rollout(self, start_node: MCTSNode) -> None:
         """Do a rollout from a leaf-node until a final state is found.
         The rollout is done by using the ActorNet to choose rollout actions repeatedly until
         a final state is found.
 
         Args:
             start_node (MCTSNode): Leaf-node to start rollout from.
-
-        Returns:
-            List[Action]: Rollout actions.
         """
 
         game_finished = False
-        path: List[Action] = []
         current_node = start_node
         while not game_finished:
             action = self.actor.select_action(self.world)
             self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
             self.visited.append((current_node.state, action))
-            path.append(action)
             new_state = self.world.do_action(action)
             new_node = MCTSNode(current_node, new_state)
             current_node.children[action] = new_node
             current_node = new_node
             game_finished, z_L = new_node.is_final_state()
-        return path, z_L
+        self.V_i[self.iteration] = z_L
 
-    def apply_tree_policy(self) -> MCTSNode:
+    def apply_tree_policy(self) -> None:
         """Apply the tree search policy from root until a leaf-node is found.
 
         We want to find the branch with the highest combination of Q(s, a) + u(s, a)
         We are using Upper Confidence Bound for Trees (UCT) for the exploration bonus u(s, a)
-
-        Returns:
-            MCTSNode: Leaf node found applying tree policy
         """
 
         is_leaf_node = False
@@ -115,7 +112,6 @@ class MCTS:
             self.d_s_a_i[(current_node.state, best_action)][self.iteration] = 1
             self.visited.append((current_node.state, best_action))
             current_node = current_node.children[best_action]
-        return current_node
 
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
