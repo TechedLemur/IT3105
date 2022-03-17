@@ -149,24 +149,21 @@ class MCTS:
 
         is_leaf_node = False
         current_node = self.root
-        self.N_s[self.root.state] += 1  # We will always visit our starting position..
         while not is_leaf_node:
             if not current_node.children:
                 is_leaf_node = True
                 break
             best_action = self.tree_policy(current_node)
             self.current_world.do_action(best_action)
-
-            self.d_s_a_i[(current_node.state, best_action)][self.iteration] = 1
             self.visited.append((current_node.state, best_action))
-
             current_node = current_node.children[best_action]
-        # self.N_s[]
 
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
                 current_node, self.current_world.simulate_action(action)
             )
+
+        self.N_s[current_node.state] += 1
         return current_node
 
     @staticmethod
@@ -180,19 +177,19 @@ class MCTS:
 
         nodes_to_visit = [self.root]
         node = nodes_to_visit[0]
-        dot.node(str(node.state) + str(node.id), f"Pieces: {node.state.pieces}")
+        dot.node(str(node.state) + str(node.id), f"Pieces: {node.state.pieces}, N: {self.N_s[node.state]}")
         while nodes_to_visit:
             node = nodes_to_visit.pop()
 
             for key, val in node.children.items():
                 dot.node(
                     name=str(val.state) + str(val.id),
-                    label=f"Pieces: {val.state.pieces}",
+                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[node.state]}",
                 )
                 dot.edge(
                     str(node.state) + str(node.id),
                     str(val.state) + str(val.id),
-                    f"Pieces: {key.pieces}, Q: {self.Q[(node.state, key)]:.2f}",
+                    f"Pieces: {key.pieces}, Q: {self.Q[(node.state, key)]:.2f}, N: {self.N_s_a[(node.state, key)]}",
                 )
                 counter[val.state] += 1
                 nodes_to_visit.append(val)
@@ -202,7 +199,7 @@ class MCTS:
 if __name__ == "__main__":
     anet = ActorNet(input_shape=10, output_dim=10)
 
-    for i in range(1):
+    for i in range(100):
         world = NimWorld(K=2, N=5, current_pieces=5)
         tree = MCTS(anet, world=world)
         player = -1
@@ -219,4 +216,5 @@ if __name__ == "__main__":
             graph.render(f"mcts-graphs/graph{j}")
             j += 1
             tree.update_root(action)
-
+        if player != 1:
+            break
