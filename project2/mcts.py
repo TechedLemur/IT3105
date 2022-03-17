@@ -105,8 +105,8 @@ class MCTS:
         actions = []
         for a, c in node.children.items():
             N_s.append(c.visits)
-            N_s_a.append(self.N[(c.state, a)])
-            Q_s_a.append(self.Q[(c.state, a)])
+            N_s_a.append(self.N[(node.state, a)])  # TODO: Look at this
+            Q_s_a.append(self.Q[(node.state, a)])
             actions.append(a)
 
         N_s = np.array(N_s)
