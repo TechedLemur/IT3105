@@ -173,8 +173,6 @@ class MCTS:
     def draw_graph(self):
         dot = Digraph(format="png")
 
-        counter = defaultdict(int)
-
         nodes_to_visit = [self.root]
         node = nodes_to_visit[0]
         dot.node(str(node.state) + str(node.id), f"Pieces: {node.state.pieces}, N: {self.N_s[node.state]}")
@@ -184,14 +182,13 @@ class MCTS:
             for key, val in node.children.items():
                 dot.node(
                     name=str(val.state) + str(val.id),
-                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[node.state]}",
+                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[val.state]}",
                 )
                 dot.edge(
                     str(node.state) + str(node.id),
                     str(val.state) + str(val.id),
                     f"Pieces: {key.pieces}, Q: {self.Q[(node.state, key)]:.2f}, N: {self.N_s_a[(node.state, key)]}",
                 )
-                counter[val.state] += 1
                 nodes_to_visit.append(val)
         return dot
 
