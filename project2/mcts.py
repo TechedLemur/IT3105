@@ -1,10 +1,12 @@
-from typing import List, Optional
+from email.policy import default
+from typing import List, Optional, Tuple
 from config import Config as cfg
 
 import numpy as np
 from actor_net import ActorNet
 from gameworlds.gameworld import GameWorld
 from gameworlds.gameworld import Action, State
+from collections import defaultdict
 
 
 class MCTSNode:
@@ -15,7 +17,7 @@ class MCTSNode:
         self.visits: int = 0
         self.player = 0
 
-    def is_final_state(self) -> bool:
+    def is_final_state(self) -> Tuple[bool, int]:
         pass
 
 
@@ -26,8 +28,9 @@ class MCTS:
 
     def __init__(self, actor, world: GameWorld) -> None:
         self.root: MCTSNode = MCTSNode(None)
-        self.Q: dict(tuple(State, Action), int) = {}
-        self.N_s_a: dict(tuple(State, Action), int) = {}
+        self.Q: defaultdict(tuple(State, Action), int) = {}
+        self.N: defaultdict(tuple(State, Action), int) = {}
+        self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
         self.world = world
 
@@ -35,13 +38,26 @@ class MCTS:
         self.root = MCTSNode(None, state)
 
     def run_simulations(self) -> None:
-        for _ in range(cfg.search_games):
-            self.apply_tree_policy()
-            self.do_rollout()
-            self.backpropagate()
+        self.d_s_a_i = defaultdict(lambda: np.zeros(cfg.search_games))
+        self.visited: List[Tuple[State, Action]] = []
+        for i in range(cfg.search_games):
+            self.iteration = i
+            leaf_node = self.apply_tree_policy()
+            path, z_L = self.do_rollout()
+            self.backpropagate(path, leaf_node)
 
     def backpropagate(self) -> None:
-        pass
+        """Backpropagate after a rollout from a leaf-node.
+           Updates N(s,a) and Q(s,a).
+        """
+
+        for state, action in self.visited:
+            self.N[(state, action)] = sum(self.d_s_a_i[(state, action)])
+            self.Q[(state, action)] = (
+                1
+                / self.N[(state, action)]
+                * sum(self.d_s_a_i[(state, action)] * self.V_i)
+            )
 
     def do_rollout(self, start_node: MCTSNode) -> List[Action]:
         """Do a rollout from a leaf-node until a final state is found.
@@ -60,13 +76,15 @@ class MCTS:
         current_node = start_node
         while not game_finished:
             action = self.actor.select_action(self.world)
+            self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
+            self.visited.append((current_node.state, action))
             path.append(action)
             new_state = self.world.do_action(action)
             new_node = MCTSNode(current_node, new_state)
             current_node.children[action] = new_node
             current_node = new_node
-            game_finished = new_node.is_final_state()
-        return path
+            game_finished, z_L = new_node.is_final_state()
+        return path, z_L
 
     def apply_tree_policy(self) -> MCTSNode:
         """Apply the tree search policy from root until a leaf-node is found.
@@ -94,6 +112,8 @@ class MCTS:
             # Todo: Handle 2 players?
             max_index = np.argmax(Q_s_a + MCTS.uct(N_s, N_s_a))
             best_action = current_node.children.keys[max_index]
+            self.d_s_a_i[(current_node.state, best_action)][self.iteration] = 1
+            self.visited.append((current_node.state, best_action))
             current_node = current_node.children[best_action]
         return current_node
 
