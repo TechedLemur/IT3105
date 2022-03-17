@@ -82,6 +82,7 @@ class MCTS:
 
         game_finished, z_L = start_node.is_final_state()
         current_node = start_node
+        current_node.visits += 1
         while not game_finished:
             action = self.actor.select_action(self.current_world)
 
@@ -95,6 +96,7 @@ class MCTS:
             else:
                 current_node = current_node.children[action]
 
+            current_node.visits += 1
             game_finished, z_L = current_node.is_final_state()
         self.V_i[self.iteration] = z_L
 
@@ -115,11 +117,13 @@ class MCTS:
 
         if node.player == 1:
             max_index = np.argmax(
-                Q_s_a + MCTS.uct(N_s, N_s_a)*int(apply_exploraty_bonus))
+                Q_s_a + MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
+            )
             best_action = actions[max_index]
         else:
             min_index = np.argmin(
-                Q_s_a - node.player*MCTS.uct(N_s, N_s_a)*int(apply_exploraty_bonus))
+                Q_s_a - node.player * MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
+            )
             best_action = actions[min_index]
         return best_action
 
@@ -133,6 +137,7 @@ class MCTS:
         is_leaf_node = False
         current_node = self.root
         while not is_leaf_node:
+            current_node.visits += 1
             if not current_node.children:
                 is_leaf_node = True
                 break
@@ -146,7 +151,8 @@ class MCTS:
 
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
-                current_node, self.current_world.simulate_action(action))
+                current_node, self.current_world.simulate_action(action)
+            )
         return current_node
 
     @staticmethod
