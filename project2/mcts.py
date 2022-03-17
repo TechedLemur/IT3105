@@ -8,6 +8,8 @@ from gameworlds.gameworld import GameWorld
 from gameworlds.gameworld import Action, State
 from collections import defaultdict
 
+from graphviz import Digraph
+
 from gameworlds.nim_world import NimWorld
 
 
@@ -156,7 +158,7 @@ class MCTS:
             self.visited.append((current_node.state, best_action))
 
             current_node = current_node.children[best_action]
-        #self.N_s[]
+        # self.N_s[]
 
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
@@ -167,6 +169,26 @@ class MCTS:
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
         return cfg.c * np.sqrt(np.log2(N_s) / (1 + N_s_a))
+
+    def draw_graph(self):
+        dot = Digraph(format="png")
+
+        counter = defaultdict(int)
+
+        nodes_to_visit = [self.root]
+        while nodes_to_visit:
+            node = nodes_to_visit.pop()
+            dot.node(str(node.state) + str(node.state), str(node.state))
+
+            for key, val in node.children.items():
+                dot.node(str(val.state) + str(counter[val.state]), str(val.state))
+                dot.edge(
+                    str(node.state) + str(counter[node.state]),
+                    str(val.state) + str(counter[val.state]),
+                    str(key),
+                )
+                nodes_to_visit.append(val)
+        return dot
 
 
 if __name__ == "__main__":
@@ -186,4 +208,6 @@ if __name__ == "__main__":
             action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
             world.do_action(action)
             tree.update_root(action)
+        graph = tree.draw_graph()
+        graph.render(f"graph{i}")
 
