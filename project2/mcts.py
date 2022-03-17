@@ -1,6 +1,7 @@
 from email.policy import default
 from typing import List, Optional, Tuple
 from config import Config as cfg
+import uuid
 
 import numpy as np
 from actor_net import ActorNet
@@ -23,6 +24,8 @@ class MCTSNode:
             self.player = 1
         else:
             self.player = -self.parent.player
+
+        self.id = uuid.uuid4()
 
     def is_final_state(self) -> Tuple[bool, int]:
         """Check if it is a final state.
@@ -176,17 +179,19 @@ class MCTS:
         counter = defaultdict(int)
 
         nodes_to_visit = [self.root]
+        node = nodes_to_visit[0]
+        dot.node(str(node.state) + str(node.id), str(node.state))
         while nodes_to_visit:
             node = nodes_to_visit.pop()
-            dot.node(str(node.state) + str(node.state), str(node.state))
 
             for key, val in node.children.items():
-                dot.node(str(val.state) + str(counter[val.state]), str(val.state))
+                dot.node(name=str(val.state) + str(val.id), label=str(val.state))
                 dot.edge(
-                    str(node.state) + str(counter[node.state]),
-                    str(val.state) + str(counter[val.state]),
+                    str(node.state) + str(node.id),
+                    str(val.state) + str(val.id),
                     str(key),
                 )
+                counter[val.state] += 1
                 nodes_to_visit.append(val)
         return dot
 
@@ -200,14 +205,15 @@ if __name__ == "__main__":
         player = -1
         state = world.state
         history = [state]
+        j = 0
         while not world.get_state().is_final_state:
-
             tree.run_simulations()
 
             player = -player
             action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
             world.do_action(action)
+            graph = tree.draw_graph()
+            graph.render(f"mcts-graphs/graph{j}")
+            j += 1
             tree.update_root(action)
-        graph = tree.draw_graph()
-        graph.render(f"graph{i}")
 
