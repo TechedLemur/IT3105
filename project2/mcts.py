@@ -15,15 +15,19 @@ class MCTSNode:
         self.state = state
         self.children: dict[Action, MCTSNode] = {}
         self.visits: int = 0
-        self.player = 0
+
+        if not self.parent:
+            self.player = 1
+        else:
+            self.player = -self.parent.player
 
     def is_final_state(self) -> Tuple[bool, int]:
-        """_summary_
+        """Check if it is a final state.
 
         Returns:
             Tuple[bool, int]: Returns both if this is a final game state and if so the game result (z_L). Either -1 (lose), 0 (draw) or +1 (win).
         """
-        pass
+        return (self.state.is_final_state, 1)
 
 
 class MCTS:
@@ -77,8 +81,10 @@ class MCTS:
         current_node = start_node
         while not game_finished:
             action = self.actor.select_action(self.world)
+
             self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
             self.visited.append((current_node.state, action))
+
             new_state = self.world.do_action(action)
             new_node = MCTSNode(current_node, new_state)
             current_node.children[action] = new_node
@@ -106,17 +112,22 @@ class MCTS:
                 N_s.append(c.visits)
                 N_s_a.append(self.N_s_a((c.state, a)))
                 Q_s_a.append(self.Q((c.state, a)))
-            # Todo: Handle 2 players?
-            max_index = np.argmax(Q_s_a + MCTS.uct(N_s, N_s_a))
-            best_action = current_node.children.keys[max_index]
+
+            if current_node.player == 1:
+                max_index = np.argmax(Q_s_a + MCTS.uct(N_s, N_s_a))
+                best_action = current_node.children.keys[max_index]
+            else:
+                min_index = np.argmin(Q_s_a - MCTS.uct(N_s, N_s_a))
+                best_action = current_node.children.keys[min_index]
+
             self.d_s_a_i[(current_node.state, best_action)][self.iteration] = 1
             self.visited.append((current_node.state, best_action))
+
             current_node = current_node.children[best_action]
 
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
         return cfg.c * np.sqrt(np.log2(N_s) / (1 + N_s_a))
 
-
 if __name__ == "__main__":
-    mctsnode = MCTSNode(None, None)
+    pass
