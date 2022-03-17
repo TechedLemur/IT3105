@@ -34,14 +34,15 @@ class NimWorld(GameWorld):
     board on their turn; the minimum pieces to remove is always ONE
     """
 
-    def __init__(self, K: int = Config.K, N: int = Config.N):
+    def __init__(self, K: int = Config.K, N: int = Config.N, current_pieces=Config.N):
 
-        self.state = NimState(is_final_state=N == 0, pieces=N)
+        self.state = NimState(is_final_state=N == 0, pieces=current_pieces)
         self.K = K
         self.all_actions = list(
             NimAction(i)
             for i in range(1, K+1)
         )
+        self.N = N
 
     def get_legal_actions(self):
 
@@ -63,5 +64,9 @@ class NimWorld(GameWorld):
     def get_all_actions(self):
         return self.all_actions
 
-    def get_state(self):
-        return self.state
+    def simulate_action(self, action):
+        new_amount = self.state.pieces - action.pieces
+        return NimState(new_amount == 0, new_amount)
+
+    def copy(self):
+        return NimWorld(self.K, self.N, current_pieces=self.state.pieces)

@@ -29,4 +29,7 @@ class GameWorld(ABC):
     def do_action(self, action: Action) -> State:
         pass
 
+    def get_state(self):
+        return self.state
+
  
