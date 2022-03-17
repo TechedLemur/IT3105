@@ -8,13 +8,14 @@ from gameworlds.gameworld import GameWorld
 from gameworlds.gameworld import Action, State
 from collections import defaultdict
 
+from gameworlds.nim_world import NimWorld
+
 
 class MCTSNode:
     def __init__(self, parent: "MCTSNode", state: State):
         self.parent = parent
         self.state = state
         self.children: dict[Action, MCTSNode] = {}
-        self.visits: int = 0
 
         if not self.parent:
             self.player = 1
@@ -39,7 +40,8 @@ class MCTS:
     def __init__(self, actor, world: GameWorld) -> None:
         self.root: MCTSNode = MCTSNode(None, world.get_state())
         self.Q: defaultdict(tuple(State, Action), int) = defaultdict(int)
-        self.N: defaultdict(tuple(State, Action), int) = defaultdict(int)
+        self.N_s_a: defaultdict(tuple(State, Action), int) = defaultdict(int)
+        self.N_s: defaultdict(State, int) = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
         self.world = world
@@ -49,14 +51,16 @@ class MCTS:
 
     def run_simulations(self) -> None:
         self.d_s_a_i = defaultdict(lambda: np.zeros(cfg.search_games))
-        self.visited: List[Tuple[State, Action]] = []
+        self.visitation_history = []
         for i in range(cfg.search_games):
+            self.visited: List[Tuple[State, Action]] = []
             # print(i)
             self.current_world = self.world.copy()
             self.iteration = i
             leaf_node = self.apply_tree_policy()
             self.do_rollout(leaf_node)
             self.backpropagate()
+            self.visitation_history.append(self.visited.copy())
 
     def backpropagate(self) -> None:
         """Backpropagate after a rollout from a leaf-node.
@@ -64,10 +68,13 @@ class MCTS:
         """
 
         for state, action in self.visited:
-            self.N[(state, action)] = sum(self.d_s_a_i[(state, action)])
+            self.d_s_a_i[(state, action)][self.iteration] = 1
+            self.N_s[state] += 1
+
+            self.N_s_a[(state, action)] = sum(self.d_s_a_i[(state, action)])
             self.Q[(state, action)] = (
                 1
-                / self.N[(state, action)]
+                / self.N_s_a[(state, action)]
                 * sum(self.d_s_a_i[(state, action)] * self.V_i)
             )
 
@@ -80,24 +87,25 @@ class MCTS:
             start_node (MCTSNode): Leaf-node to start rollout from.
         """
 
+        player = start_node.player
         game_finished, z_L = start_node.is_final_state()
-        current_node = start_node
-        current_node.visits += 1
         while not game_finished:
             action = self.actor.select_action(self.current_world)
-
-            self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
-            self.visited.append((current_node.state, action))
+            # self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
+            # self.visited.append((current_node.state, action))
             new_state = self.current_world.do_action(action)
-            if action not in current_node.children.keys():
+
+            """ if action not in current_node.children.keys():
                 new_node = MCTSNode(current_node, new_state)
                 current_node.children[action] = new_node
                 current_node = new_node
             else:
-                current_node = current_node.children[action]
+                current_node = current_node.children[action] """
 
-            current_node.visits += 1
-            game_finished, z_L = current_node.is_final_state()
+            game_finished = new_state.is_final_state
+            player = -player
+
+        z_L = -player
         self.V_i[self.iteration] = z_L
 
     def tree_policy(self, node: MCTSNode, apply_exploraty_bonus=True):
@@ -106,8 +114,8 @@ class MCTS:
         Q_s_a = []
         actions = []
         for a, c in node.children.items():
-            N_s.append(c.visits)
-            N_s_a.append(self.N[(node.state, a)])  # TODO: Look at this
+            N_s.append(self.N_s[c.state])
+            N_s_a.append(self.N_s_a[(node.state, a)])  # TODO: Look at this
             Q_s_a.append(self.Q[(node.state, a)])
             actions.append(a)
 
@@ -136,8 +144,8 @@ class MCTS:
 
         is_leaf_node = False
         current_node = self.root
+        self.N_s[self.root.state] += 1  # We will always visit our starting position..
         while not is_leaf_node:
-            current_node.visits += 1
             if not current_node.children:
                 is_leaf_node = True
                 break
@@ -148,6 +156,7 @@ class MCTS:
             self.visited.append((current_node.state, best_action))
 
             current_node = current_node.children[best_action]
+        #self.N_s[]
 
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
@@ -161,4 +170,20 @@ class MCTS:
 
 
 if __name__ == "__main__":
-    pass
+    anet = ActorNet(input_shape=10, output_dim=10)
+
+    for i in range(1):
+        world = NimWorld(K=2, N=5, current_pieces=5)
+        tree = MCTS(anet, world=world)
+        player = -1
+        state = world.state
+        history = [state]
+        while not world.get_state().is_final_state:
+
+            tree.run_simulations()
+
+            player = -player
+            action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
+            world.do_action(action)
+            tree.update_root(action)
+
