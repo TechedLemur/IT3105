@@ -180,16 +180,19 @@ class MCTS:
 
         nodes_to_visit = [self.root]
         node = nodes_to_visit[0]
-        dot.node(str(node.state) + str(node.id), str(node.state))
+        dot.node(str(node.state) + str(node.id), f"Pieces: {node.state.pieces}")
         while nodes_to_visit:
             node = nodes_to_visit.pop()
 
             for key, val in node.children.items():
-                dot.node(name=str(val.state) + str(val.id), label=str(val.state))
+                dot.node(
+                    name=str(val.state) + str(val.id),
+                    label=f"Pieces: {val.state.pieces}",
+                )
                 dot.edge(
                     str(node.state) + str(node.id),
                     str(val.state) + str(val.id),
-                    str(key),
+                    f"Pieces: {key.pieces}, Q: {self.Q[(node.state, key)]:.2f}",
                 )
                 counter[val.state] += 1
                 nodes_to_visit.append(val)
