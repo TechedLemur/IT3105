@@ -103,10 +103,13 @@ class MCTS:
 
         player = start_node.player
         game_finished, z_L = start_node.is_final_state()
+        it = 0
         while not game_finished:
             action = self.actor.select_action(self.current_world)
-            # self.d_s_a_i[(current_node.state, action)][self.iteration] = 1
-            # self.visited.append((current_node.state, action))
+
+            if it == 0:
+                self.visited.append((start_node, action))
+                #self.d_s_a_i[(start_node, action)][self.iteration] = 1
             new_state = self.current_world.do_action(action)
 
             """ if action not in current_node.children.keys():
@@ -118,6 +121,7 @@ class MCTS:
 
             game_finished = new_state.is_final_state
             player = -player
+            it += 1
         z_L = -player
         self.V_i[self.iteration] = z_L
 
@@ -143,7 +147,7 @@ class MCTS:
             best_action = actions[max_index]
         else:
             min_index = np.argmin(
-                Q_s_a - node.player * MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
+                Q_s_a - MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
             )
             best_action = actions[min_index]
         return best_action
@@ -171,7 +175,7 @@ class MCTS:
                 current_node, self.current_world.simulate_action(action)
             )
 
-        self.N_s[current_node] += 1
+        #self.N_s[current_node] += 1
         return current_node
 
     @staticmethod
@@ -208,7 +212,7 @@ if __name__ == "__main__":
     anet = ActorNet(input_shape=10, output_dim=10)
     wins = np.zeros(100)
 
-    for i in range(1):
+    for i in range(100):
         world = NimWorld(K=2, N=5, current_pieces=5)
         tree = MCTS(anet, world=world)
         player = -1
@@ -221,10 +225,9 @@ if __name__ == "__main__":
             player = -player
             action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
             world.do_action(action)
-            if i == 0:
-                graph = tree.draw_graph()
-                graph.render(f"mcts-graphs/graph{j}")
-                j += 1
+            graph = tree.draw_graph()
+            graph.render(f"mcts-graphs/graph{j}")
+            j += 1
             tree.update_root(action)
         print(f"Player {player} won!")
         wins[i] = player
