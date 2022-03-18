@@ -1,4 +1,5 @@
 from email.policy import default
+import random
 from typing import List, Optional, Tuple
 from config import Config as cfg
 import uuid
@@ -108,7 +109,11 @@ class MCTS:
         game_finished, z_L = start_node.is_final_state()
         it = 0
         while not game_finished:
-            action = self.actor.select_action(self.current_world)
+            if random.random() <= cfg.random_rollout_move_p:
+                legal_actions = self.current_world.get_legal_actions()
+                action = legal_actions[random.randint(0, len()-1)]
+            else:
+                action = self.actor.select_action(self.current_world)
 
             if it == 0:
                 self.visited.append((start_node, action))

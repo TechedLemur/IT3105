@@ -11,6 +11,7 @@ class Config:
     episodes = 100
     search_games = 100
     c = 1.0
+    random_rollout_move_p = 0.1
 
 
 # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
