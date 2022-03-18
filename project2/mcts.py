@@ -122,6 +122,7 @@ class MCTS:
             new_state = self.current_world.do_action(action)
 
             if add_rollout_nodes_to_tree:
+                self.visited.append((current_node, action))
                 if action not in current_node.children.keys():
                     new_node = MCTSNode(current_node, new_state)
                     current_node.children[action] = new_node
