@@ -19,18 +19,18 @@ class ReinforcementLearningAgent:
             player = -1
             mcts = MCTS(self.anet, world)
 
-
+            replay_buffer = []
             while not world.get_state().is_final_state:
                 mcts.run_simulations()
 
                 player = -player
-                action = mcts.tree_policy(mcts.root, apply_exploraty_bonus=False)
+                D = mcts.get_visit_counts_from_root()
+                replay_buffer.append((D, mcts.root))
+
+                action = mcts.get_best_action()
                 world.do_action(action)
-                mcts.update_root(action)
             wins[ep] = player
-            # self.anet.train()
+            # self.anet.train(replay_buffer)
 
-        print(f"Player 1 won {np.count_nonzero(wins)}%")
-
-
+        print(f"Player 1 won {np.count_nonzero(wins)}% of the games!")
 
