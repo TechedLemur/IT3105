@@ -58,8 +58,11 @@ class MCTS:
         self.actor = actor
         self.world = world
 
-    def update_root(self, action: Action):
+    def get_best_action(self):
+        D = self.get_visit_counts_from_root()
+        action = list(self.root.children.keys())[np.argmax(D)]
         self.root = self.root.children[action]
+        return action
 
     def run_simulations(self) -> None:
         self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
@@ -180,7 +183,13 @@ class MCTS:
 
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
-        return cfg.c * np.sqrt(np.log2(N_s + 0.001) / (1 + N_s_a))
+        return cfg.c * np.sqrt(np.log(N_s) / (1 + N_s_a))
+
+    def get_visit_counts_from_root(self)->np.array:
+        visit_counts = [self.N_s_a[self.root, a] for a in self.root.children.keys()]
+        return np.array(visit_counts)
+
+
 
     def draw_graph(self):
         dot = Digraph(format="png")
@@ -223,12 +232,12 @@ if __name__ == "__main__":
             tree.run_simulations()
 
             player = -player
-            action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
-            world.do_action(action)
+            D = tree.get_visit_counts_from_root()
             graph = tree.draw_graph()
             graph.render(f"mcts-graphs/graph{j}")
             j += 1
-            tree.update_root(action)
+            action = tree.get_best_action()
+            world.do_action(action)
         print(f"Player {player} won!")
         wins[i] = player
 
