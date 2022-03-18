@@ -19,6 +19,7 @@ class MCTSNode:
         self.parent = parent
         self.state = state
         self.children: dict[Action, MCTSNode] = {}
+        self.visits = 0
 
         if not self.parent:
             self.player = 1
@@ -36,6 +37,12 @@ class MCTSNode:
 
         return (self.state.is_final_state, -self.player)
 
+    def __repr__(self):
+        return f"MCTSNode(state={self.state},visits={self.visits},player={self.player})"
+
+    def __hash__(self):
+        return self.id.int
+
 
 class MCTS:
     """
@@ -44,9 +51,9 @@ class MCTS:
 
     def __init__(self, actor, world: GameWorld) -> None:
         self.root: MCTSNode = MCTSNode(None, world.get_state())
-        self.Q: defaultdict(tuple(State, Action), int) = defaultdict(int)
-        self.N_s_a: defaultdict(tuple(State, Action), int) = defaultdict(int)
-        self.N_s: defaultdict(State, int) = defaultdict(int)
+        self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
+        self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
         self.world = world
@@ -55,10 +62,12 @@ class MCTS:
         self.root = self.root.children[action]
 
     def run_simulations(self) -> None:
-        self.d_s_a_i = defaultdict(lambda: np.zeros(cfg.search_games))
+        self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
+            lambda: np.zeros(cfg.search_games)
+        )
         self.visitation_history = []
         for i in range(cfg.search_games):
-            self.visited: List[Tuple[State, Action]] = []
+            self.visited: List[Tuple[MCTSNode, Action]] = []
             # print(i)
             self.current_world = self.world.copy()
             self.iteration = i
@@ -72,15 +81,15 @@ class MCTS:
            Updates N(s,a) and Q(s,a).
         """
 
-        for state, action in self.visited:
-            self.d_s_a_i[(state, action)][self.iteration] = 1
-            self.N_s[state] += 1
+        for node, action in self.visited:
+            self.d_s_a_i[(node, action)][self.iteration] = 1
+            self.N_s[node] += 1
 
-            self.N_s_a[(state, action)] = sum(self.d_s_a_i[(state, action)])
-            self.Q[(state, action)] = (
+            self.N_s_a[(node, action)] = sum(self.d_s_a_i[(node, action)])
+            self.Q[(node, action)] = (
                 1
-                / self.N_s_a[(state, action)]
-                * sum(self.d_s_a_i[(state, action)] * self.V_i)
+                / self.N_s_a[(node, action)]
+                * sum(self.d_s_a_i[(node, action)] * self.V_i)
             )
 
     def do_rollout(self, start_node: MCTSNode) -> None:
@@ -109,7 +118,6 @@ class MCTS:
 
             game_finished = new_state.is_final_state
             player = -player
-
         z_L = -player
         self.V_i[self.iteration] = z_L
 
@@ -119,9 +127,9 @@ class MCTS:
         Q_s_a = []
         actions = []
         for a, c in node.children.items():
-            N_s.append(self.N_s[c.state])
-            N_s_a.append(self.N_s_a[(node.state, a)])  # TODO: Look at this
-            Q_s_a.append(self.Q[(node.state, a)])
+            N_s.append(self.N_s[node])
+            N_s_a.append(self.N_s_a[(node, a)])  # TODO: Look at this
+            Q_s_a.append(self.Q[(node, a)])
             actions.append(a)
 
         N_s = np.array(N_s)
@@ -155,7 +163,7 @@ class MCTS:
                 break
             best_action = self.tree_policy(current_node)
             self.current_world.do_action(best_action)
-            self.visited.append((current_node.state, best_action))
+            self.visited.append((current_node, best_action))
             current_node = current_node.children[best_action]
 
         for action in self.current_world.get_legal_actions():
@@ -163,31 +171,34 @@ class MCTS:
                 current_node, self.current_world.simulate_action(action)
             )
 
-        self.N_s[current_node.state] += 1
+        self.N_s[current_node] += 1
         return current_node
 
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
-        return cfg.c * np.sqrt(np.log2(N_s) / (1 + N_s_a))
+        return cfg.c * np.sqrt(np.log2(N_s + 0.001) / (1 + N_s_a))
 
     def draw_graph(self):
         dot = Digraph(format="png")
 
         nodes_to_visit = [self.root]
         node = nodes_to_visit[0]
-        dot.node(str(node.state) + str(node.id), f"Pieces: {node.state.pieces}, N: {self.N_s[node.state]}")
+        dot.node(
+            str(node.state) + str(node.id),
+            f"Pieces: {node.state.pieces}, N: {self.N_s[node]}",
+        )
         while nodes_to_visit:
             node = nodes_to_visit.pop()
 
             for key, val in node.children.items():
                 dot.node(
                     name=str(val.state) + str(val.id),
-                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[val.state]}",
+                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[val]}",
                 )
                 dot.edge(
                     str(node.state) + str(node.id),
                     str(val.state) + str(val.id),
-                    f"Pieces: {key.pieces}, Q: {self.Q[(node.state, key)]:.2f}, N: {self.N_s_a[(node.state, key)]}",
+                    f"Pieces: {key.pieces}, Q: {self.Q[(node, key)]:.2f}, N: {self.N_s_a[(node, key)]}",
                 )
                 nodes_to_visit.append(val)
         return dot
@@ -195,8 +206,9 @@ class MCTS:
 
 if __name__ == "__main__":
     anet = ActorNet(input_shape=10, output_dim=10)
+    wins = np.zeros(100)
 
-    for i in range(100):
+    for i in range(1):
         world = NimWorld(K=2, N=5, current_pieces=5)
         tree = MCTS(anet, world=world)
         player = -1
@@ -209,9 +221,14 @@ if __name__ == "__main__":
             player = -player
             action = tree.tree_policy(tree.root, apply_exploraty_bonus=False)
             world.do_action(action)
-            graph = tree.draw_graph()
-            graph.render(f"mcts-graphs/graph{j}")
-            j += 1
+            if i == 0:
+                graph = tree.draw_graph()
+                graph.render(f"mcts-graphs/graph{j}")
+                j += 1
             tree.update_root(action)
+        print(f"Player {player} won!")
+        wins[i] = player
+
         if player != 1:
             break
+    print(f"Player 1 won {np.average(wins)*100}%")
