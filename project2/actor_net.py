@@ -27,7 +27,9 @@ class ActorNet:
         self.model = keras.Model(input_layer, output_layer, name="ANET")
 
         self.model.compile(
-            optimizer="adam", loss=keras.losses.CategoricalCrossentropy(), metrics=["accuracy"]
+            optimizer="adam",
+            loss=keras.losses.CategoricalCrossentropy(),
+            metrics=["accuracy"],
         )
 
     def select_action(self, world: GameWorld) -> Action:
@@ -49,8 +51,7 @@ class ActorNet:
 
         probs = self.model.predict(world.get_state().as_vector())
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
@@ -64,3 +65,10 @@ class ActorNet:
     def train(self, x_train, y_train):
 
         self.model.fit(x=x_train, y=y_train)
+
+    def save_params(self, i):
+        self.model.save_weights(f"models/model{i}")
+
+    def load_params(self, i):
+        self.model.load_weights(f"models/model{i}")
+
