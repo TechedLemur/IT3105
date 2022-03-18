@@ -96,7 +96,7 @@ class MCTS:
                 * sum(self.d_s_a_i[(node, action)] * self.V_i)
             )
 
-    def do_rollout(self, start_node: MCTSNode) -> None:
+    def do_rollout(self, start_node: MCTSNode, add_rollout_nodes_to_tree=False) -> None:
         """Do a rollout from a leaf-node until a final state is found.
         The rollout is done by using the ActorNet to choose rollout actions repeatedly until
         a final state is found.
@@ -108,24 +108,26 @@ class MCTS:
         player = start_node.player
         game_finished, z_L = start_node.is_final_state()
         it = 0
+        current_node = start_node
         while not game_finished:
             if random.random() <= cfg.random_rollout_move_p:
                 legal_actions = self.current_world.get_legal_actions()
-                action = legal_actions[random.randint(0, len()-1)]
+                action = random.choice(legal_actions)
             else:
                 action = self.actor.select_action(self.current_world)
 
             if it == 0:
                 self.visited.append((start_node, action))
-                #self.d_s_a_i[(start_node, action)][self.iteration] = 1
+                # self.d_s_a_i[(start_node, action)][self.iteration] = 1
             new_state = self.current_world.do_action(action)
 
-            """ if action not in current_node.children.keys():
-                new_node = MCTSNode(current_node, new_state)
-                current_node.children[action] = new_node
-                current_node = new_node
-            else:
-                current_node = current_node.children[action] """
+            if add_rollout_nodes_to_tree:
+                if action not in current_node.children.keys():
+                    new_node = MCTSNode(current_node, new_state)
+                    current_node.children[action] = new_node
+                    current_node = new_node
+                else:
+                    current_node = current_node.children[action]
 
             game_finished = new_state.is_final_state
             player = -player
@@ -183,18 +185,16 @@ class MCTS:
                 current_node, self.current_world.simulate_action(action)
             )
 
-        #self.N_s[current_node] += 1
+        # self.N_s[current_node] += 1
         return current_node
 
     @staticmethod
     def uct(N_s, N_s_a) -> np.array:
         return cfg.c * np.sqrt(np.log(N_s) / (1 + N_s_a))
 
-    def get_visit_counts_from_root(self)->np.array:
+    def get_visit_counts_from_root(self) -> np.array:
         visit_counts = [self.N_s_a[self.root, a] for a in self.root.children.keys()]
         return np.array(visit_counts)
-
-
 
     def draw_graph(self):
         dot = Digraph(format="png")
