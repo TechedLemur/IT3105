@@ -36,7 +36,8 @@ class MCTSNode:
         """Check if it is a final state.
 
         Returns:
-            Tuple[bool, int]: Returns both if this is a final game state and if so the game result (z_L). Either -1 (lose), 0 (draw) or +1 (win).
+            Tuple[bool, int]: Returns both if this is a final game state and if so the game result (z_L).
+            Either -1 (lose), 0 (draw) or +1 (win) depending on the type of game.
         """
 
         return (self.state.is_final_state, -self.player)
@@ -137,9 +138,9 @@ class MCTS:
             else:
                 action = self.actor.select_action(self.current_world)
 
+            # The start-node is the leaf-node which should be regarded as visited.
             if it == 0:
                 self.visited.append((start_node, action))
-                # self.d_s_a_i[(start_node, action)][self.iteration] = 1
             new_state = self.current_world.do_action(action)
 
             if add_rollout_nodes_to_tree:
