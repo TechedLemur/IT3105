@@ -16,6 +16,9 @@ from gameworlds.nim_world import NimWorld
 
 
 class MCTSNode:
+    """MCTSNode-class which represents a node in the MCTS-tree. This also represents a search state.
+    """
+
     def __init__(self, parent: "MCTSNode", state: State):
         self.parent = parent
         self.state = state
@@ -47,7 +50,7 @@ class MCTSNode:
 
 class MCTS:
     """
-    Monte Carlo Tree Search
+    Monte Carlo Tree Search-class. This represents a tree which can run simulations.
     """
 
     def __init__(self, actor, world: GameWorld) -> None:
@@ -59,30 +62,47 @@ class MCTS:
         self.actor = actor
         self.world = world
 
-    def get_best_action(self):
+    def get_best_action(self) -> Action:
+        """Get the best action to do as calculated by the arch from root with the most visits.
+
+        Returns:
+            Action: Action (arch) from root with most visits.
+        """
         D = self.get_visit_counts_from_root()
         action = list(self.root.children.keys())[np.argmax(D)]
         self.root = self.root.children[action]
         return action
 
     def run_simulations(self) -> None:
+        """Run M simulations from the current state.
+        A simulation consists of:
+        1. Applying tree policy to a leaf node.
+        2. Doing a rollout from the leaf node.
+        3. Backpropagating the eval which updates N(s, a) and Q(s, a).
+        """
+
         self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
             lambda: np.zeros(cfg.search_games)
-        )
-        self.visitation_history = []
+        )  # Represents the visits of arch on iteration i. (Using indice to get the ith visit count).
+
         for i in range(cfg.search_games):
-            self.visited: List[Tuple[MCTSNode, Action]] = []
-            # print(i)
+            self.visited: List[
+                Tuple[MCTSNode, Action]
+            ] = []  # Visited nodes are appended here which is used during backpropagation
             self.current_world = self.world.copy()
             self.iteration = i
             leaf_node = self.apply_tree_policy()
             self.do_rollout(leaf_node)
             self.backpropagate()
-            self.visitation_history.append(self.visited.copy())
 
     def backpropagate(self) -> None:
         """Backpropagate after a rollout from a leaf-node.
            Updates N(s,a) and Q(s,a).
+
+           N(s,a) = sum_i d(s, a, i)
+           Q(s, a) = 1/N(s, a) * sum_i d(s, a, i)*V(s^i)
+
+           Where V(s^i) was the evaluation value of leaf node s on iteration i.
         """
 
         for node, action in self.visited:
@@ -103,6 +123,7 @@ class MCTS:
 
         Args:
             start_node (MCTSNode): Leaf-node to start rollout from.
+            add_rollout_nodes_to_tree: (bool): If rollout nodes should be added to the tree.
         """
 
         player = start_node.player
@@ -136,38 +157,40 @@ class MCTS:
         z_L = -player
         self.V_i[self.iteration] = z_L
 
-    def tree_policy(self, node: MCTSNode, apply_exploraty_bonus=True):
-        N_s = []
-        N_s_a = []
-        Q_s_a = []
-        actions = []
-        for a, c in node.children.items():
-            N_s.append(self.N_s[node])
-            N_s_a.append(self.N_s_a[(node, a)])  # TODO: Look at this
-            Q_s_a.append(self.Q[(node, a)])
-            actions.append(a)
+    def tree_policy(self, node: MCTSNode, apply_exploraty_bonus=True) -> Action:
+        """Get the tree policy from a node which is the action which maximizes both the Q-value and
+        an exploratory bonus for going on branches not visited a lot. This is done by using the UCT-formula.
 
-        N_s = np.array(N_s)
-        N_s_a = np.array(N_s_a)
-        Q_s_a = np.array(Q_s_a)
+
+        Args:
+            node (MCTSNode): Node to apply
+            apply_exploraty_bonus (bool, optional): _description_. Defaults to True.
+
+        Returns:
+            Action: Best action according to the UCT-calculation.
+        """
+
+        N_s_a = np.array([self.N_s_a[(node, a)] for a in node.children.keys()])
+        Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
         if node.player == 1:
-            max_index = np.argmax(
-                Q_s_a + MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
+            index = np.argmax(
+                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             )
-            best_action = actions[max_index]
         else:
-            min_index = np.argmin(
-                Q_s_a - MCTS.uct(N_s, N_s_a) * int(apply_exploraty_bonus)
+            index = np.argmin(
+                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             )
-            best_action = actions[min_index]
-        return best_action
+        return list(node.children.keys())[index]
 
     def apply_tree_policy(self) -> MCTSNode:
         """Apply the tree search policy from root until a leaf-node is found.
 
-        We want to find the branch with the highest combination of Q(s, a) + u(s, a)
-        We are using Upper Confidence Bound for Trees (UCT) for the exploration bonus u(s, a)
+        We want to find the branch with the highest combination of Q(s, a) + u(s, a).
+        We are using Upper Confidence Bound for Trees (UCT) for the exploration bonus u(s, a).
+
+        Returns:
+            MCTSNode: Leaf-node found by applying the tree-policy down the tree.
         """
 
         is_leaf_node = False
@@ -180,24 +203,43 @@ class MCTS:
             self.current_world.do_action(best_action)
             self.visited.append((current_node, best_action))
             current_node = current_node.children[best_action]
-
+        # Expand leaf-node.
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
                 current_node, self.current_world.simulate_action(action)
             )
-
-        # self.N_s[current_node] += 1
         return current_node
 
     @staticmethod
-    def uct(N_s, N_s_a) -> np.array:
+    def uct(N_s: int, N_s_a: np.array) -> np.array:
+        """The UCT-calculation.
+
+        Args:
+            N_s (int): Number of visits for node.
+            N_s_a (np.array): Number of visits of arches from node.
+
+        Returns:
+            np.array: UCT-calculation.
+        """
         return cfg.c * np.sqrt(np.log(N_s) / (1 + N_s_a))
 
     def get_visit_counts_from_root(self) -> np.array:
+        """Get the visit count distribution from root.
+
+        Returns:
+            np.array: Visit count distribution from root.
+        """
+
         visit_counts = [self.N_s_a[self.root, a] for a in self.root.children.keys()]
         return np.array(visit_counts)
 
-    def draw_graph(self):
+    def draw_graph(self) -> Digraph:
+        """Generate a digraph of the current tree which can be used
+        for visualization purposes.
+
+        Returns:
+            Digraph: A digraph representation of the current tree.
+        """
         dot = Digraph(format="png")
 
         nodes_to_visit = [self.root]
