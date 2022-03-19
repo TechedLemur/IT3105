@@ -231,8 +231,8 @@ class MCTS:
             np.array: Visit count distribution from root.
         """
 
-        visit_counts = [self.N_s_a[self.root, a] for a in self.root.children.keys()]
-        return np.array(visit_counts)
+        visit_counts = np.array([self.N_s_a[self.root, a] for a in self.root.children.keys()])
+        return visit_counts/np.sum(visit_counts)
 
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used
@@ -241,6 +241,7 @@ class MCTS:
         Returns:
             Digraph: A digraph representation of the current tree.
         """
+
         dot = Digraph(format="png")
 
         nodes_to_visit = [self.root]
