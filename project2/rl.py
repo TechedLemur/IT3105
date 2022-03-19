@@ -4,6 +4,7 @@ from gameworlds.nim_world import NimWorld
 from config import Config as cfg
 from gameworlds.gameworld import GameWorld
 import numpy as np
+from collections import deque
 
 
 class ReinforcementLearningAgent:
@@ -14,12 +15,12 @@ class ReinforcementLearningAgent:
     def train(self):
         wins = np.zeros(cfg.episodes)
 
+        replay_buffer = deque([], maxlen=10)
         for ep in range(cfg.episodes):
             world = NimWorld(K=2, N=5, current_pieces=5)
             player = -1
             mcts = MCTS(self.anet, world)
 
-            replay_buffer = []
             while not world.get_state().is_final_state:
                 mcts.run_simulations()
 
