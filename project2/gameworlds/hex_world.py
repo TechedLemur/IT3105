@@ -7,7 +7,6 @@ import numpy as np
 from config import Config
 
 
-@staticmethod
 def generate_neighbors(K=Config.k) -> dict:
     neighbors = {}
     for row in range(K):
@@ -17,7 +16,8 @@ def generate_neighbors(K=Config.k) -> dict:
                 if col == 0:  # Top left corner
                     neighbors[(row, col)] = [(row, col+1), (row + 1, col)]
                 elif col == K-1:  # Top right corner
-                    neighbors[(row, col)] = [(row, col-1), (row + 1, col)]
+                    neighbors[(row, col)] = [(row, col-1),
+                                             (row + 1, col), (row+1, col-1)]
                 else:  # Middle pieces
                     neighbors[(row, col)] = [(row, col+1), (row, col-1),
                                              (row + 1, col), (row + 1, col - 1)]
@@ -42,9 +42,46 @@ def generate_neighbors(K=Config.k) -> dict:
                 else:  # Middle pieces
                     neighbors[(row, col)] = [(row, col-1), (row+1, col-1),
                                              (row + 1, col), (row - 1, col), (row, col+1), (row-1, col+1)]
+    return neighbors
 
 
 neighbors = generate_neighbors()
+
+
+def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray = None) -> bool:
+    """
+    Returns True if the move is a winning move for the player, False otherwise.
+    Do a breadth-first search from the placed piece, and see if the two edges for the player is connected.
+    """
+
+    if player == 1:
+        ind = 0
+    else:
+        ind = 1
+
+    side1 = move[ind] == 0  # Piece inserted in top/left row
+    side2 = move[ind] == k-1  # Piece inserted in bottom/right row
+
+    Q = list(neighbors[move])
+    visited = set()
+    while Q:
+        p = Q.pop()
+        visited.add(p)
+
+        if (board[p] == player):
+            if p[ind] == 0:
+                side1 = True
+            elif p[ind] == k-1:
+                side2 = True
+
+            if side1 and side2:  # Connected
+                return True
+
+            for n in neighbors[p]:
+                if n not in Q and n not in visited:
+                    Q.append(n)
+
+    return False
 
 
 @dataclass
@@ -63,6 +100,7 @@ class HexState(State):
 
     player: int  # The player whos turn it is to move
     board: np.ndarray  # 2D repesentation of the board
+    k: int  # Boardlength
 
     @staticmethod
     def from_array(array: List) -> State:
@@ -87,19 +125,28 @@ class HexState(State):
         else:
             player = -1
 
-        n = np.sqrt(len(array)-1)
+        n = int(np.sqrt(len(array)-1))
 
         board = np.array(array[1:]).reshape((n, n))
 
         # TODO: Calculate final state
         final = False
 
-        return HexState(is_final_state=final, player=player, board=board)
+        return HexState(is_final_state=final, player=player, board=board, k=n)
 
         # TODO? (performance gains): Make converter directly from "Flattened Game State" to ANET input without proxy through HexState
 
-    def get_legal_actions(self):
-        pass
+    def get_legal_actions(self) -> List[HexAction]:
+
+        # TODO?: See if we can get faster than k^2
+
+        actions = []
+        for i in range(self.k):
+            for j in range(self.k):
+                if (self.board[i][j] == 0):  # Empty space
+                    actions.append(HexAction(row=i, col=j))
+
+        return actions
 
     def do_action(self, action: HexAction) -> State:
 
@@ -107,10 +154,10 @@ class HexState(State):
 
         board[action.row][action.col] = self.player
 
-        # TODO: Calculate final state
-        final = False
+        final = is_final_move(board=board, move=(
+            action.row, action.col), player=self.player)
 
-        return HexState(is_final_state=final, player=-self.player, board=board)
+        return HexState(is_final_state=final, player=-self.player, board=board, k=self.k)
 
     def as_vector(self):
         # TODO: One hot-ish encode each position on board
