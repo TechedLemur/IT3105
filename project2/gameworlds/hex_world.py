@@ -1,7 +1,50 @@
+from distutils.command.config import config
+from sklearn import neighbors
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
+from config import Config
+
+
+@staticmethod
+def generate_neighbors(K=Config.k) -> dict:
+    neighbors = {}
+    for row in range(K):
+        for col in range(K):
+
+            if row == 0:  # Top row
+                if col == 0:  # Top left corner
+                    neighbors[(row, col)] = [(row, col+1), (row + 1, col)]
+                elif col == K-1:  # Top right corner
+                    neighbors[(row, col)] = [(row, col-1), (row + 1, col)]
+                else:  # Middle pieces
+                    neighbors[(row, col)] = [(row, col+1), (row, col-1),
+                                             (row + 1, col), (row + 1, col - 1)]
+            elif row == K-1:  # Bottom row
+                if col == 0:  # Bottom left corner
+                    neighbors[(row, col)] = [(row, col+1),
+                                             (row - 1, col), (row - 1, col+1)]
+                elif col == K-1:  # Bottom right corner
+                    neighbors[(row, col)] = [(row, col-1), (row - 1, col)]
+                else:  # Middle pieces
+                    neighbors[(row, col)] = [(row, col+1), (row, col-1),
+                                             (row - 1, col), (row - 1, col + 1)]
+
+            else:  # Middle rows
+
+                if col == 0:  # Left column
+                    neighbors[(row, col)] = [(row, col+1), (row - 1,
+                                                            col), (row + 1, col), (row - 1, col+1)]
+                elif col == K-1:  # Right column
+                    neighbors[(row, col)] = [(row, col-1),
+                                             (row+1, col-1), (row + 1, col), (row - 1, col)]
+                else:  # Middle pieces
+                    neighbors[(row, col)] = [(row, col-1), (row+1, col-1),
+                                             (row + 1, col), (row - 1, col), (row, col+1), (row-1, col+1)]
+
+
+neighbors = generate_neighbors()
 
 
 @dataclass
