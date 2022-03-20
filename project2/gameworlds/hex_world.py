@@ -8,6 +8,10 @@ from config import Config
 
 
 def generate_neighbors(K=Config.k) -> dict:
+    """
+    Helper method for generating a look-up table for neighbouring nodes. 
+    Generate once and reuse to increase performance.
+    """
     neighbors = {}
     for row in range(K):
         for col in range(K):
@@ -52,6 +56,7 @@ def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray
     """
     Returns True if the move is a winning move for the player, False otherwise.
     Do a breadth-first search from the placed piece, and see if the two edges for the player is connected.
+    Worst case O(k^2), best case O(2)
     """
 
     if player == 1:
@@ -78,6 +83,7 @@ def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray
                 return True
 
             for n in neighbors[p]:
+                # Possible performance gains to check if board[n]==player
                 if n not in Q and n not in visited:
                     Q.append(n)
 
@@ -129,12 +135,27 @@ class HexState(State):
 
         board = np.array(array[1:]).reshape((n, n))
 
-        # TODO: Calculate final state
         final = False
+        # Calculate final state. Maybe not necessary, as there is no use to continue after a game is finished
+        for i in range(n):
+            if player == 1:
+                if is_final_move(move=(0, i), player=1, k=n, board=board):  # Check all top pieces
+                    final = True
+                    break
+            else:  # Player -1
+                # Check all left pieces
+                if is_final_move(move=(i, 0), player=-1, k=n, board=board):
+                    final = True
+                    break
 
         return HexState(is_final_state=final, player=player, board=board, k=n)
 
         # TODO? (performance gains): Make converter directly from "Flattened Game State" to ANET input without proxy through HexState
+
+    @staticmethod
+    def empty_board(starting_player: int = 1, k=Config.k):
+        board = np.zeros(k**2).reshape((k, k))
+        return HexState(is_final_state=False, player=starting_player, board=board)
 
     def get_legal_actions(self) -> List[HexAction]:
 
@@ -160,18 +181,30 @@ class HexState(State):
         return HexState(is_final_state=final, player=-self.player, board=board, k=self.k)
 
     def as_vector(self):
-        # TODO: One hot-ish encode each position on board
-
+        """
+        Returns the game state as a vector intended to use as input for the ANET.
+        We want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
+        """
+        vector = []
         if self.player == 1:
-            return self.board.flatten()
-        return -self.board.T.flatten()  # Transpose and swap colors
+            board = self.board
+        else:
+            board = -self.board.T  # Transpose and swap colors
+        for p in board.flatten():
+            if p == 1:
+                vector.extend([1, 0])
+            elif p == -1:
+                vector.extend([0, 1])
+            else:
+                vector.extend([0, 0])
+        return np.array(vector)
 
     def __hash__(self):
         return hash(repr(self))
 
 
 class HexWorld(GameWorld):
-    # TODO: Scrap this?
+    # TODO: Scrap this? Task description wants a "State manager" though .__.
 
     def __init__(self):
         pass
