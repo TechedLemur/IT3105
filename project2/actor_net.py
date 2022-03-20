@@ -2,6 +2,7 @@ from gameworlds.gameworld import State, Action, GameWorld
 from typing import List, Tuple
 import tensorflow as tf
 from tensorflow import keras
+from project2.mcts import MCTSNode
 from tensorflow.keras import layers
 import numpy as np
 import random
@@ -43,7 +44,7 @@ class ActorNet:
         legal_actions = world.get_legal_actions()
 
         # While working on MCTS, just return random action
-        return random.choice(legal_actions)
+        # return random.choice(legal_actions)
 
         all_actions = (
             world.get_all_actions()
@@ -61,10 +62,12 @@ class ActorNet:
 
         # TODO: Decide if we just return the 1-hot index or the actual action
         new_action = all_actions[new_action_index]
+        return new_action
 
-    def train(self, x_train, y_train):
+    def train(self, case: List[Tuple[np.array, MCTSNode]]):
 
-        self.model.fit(x=x_train, y=y_train)
+        pass
+        #self.model.fit(x=x_train, y=y_train)
 
     def save_params(self, i):
         self.model.save_weights(f"models/model{i}")
