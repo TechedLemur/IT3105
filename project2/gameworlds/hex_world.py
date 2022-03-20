@@ -97,6 +97,9 @@ class HexAction(Action):
     row: int
     col: int
 
+    def transposed(self) -> Action:
+        return HexAction(row=self.col, col=self.row)
+
     def __hash__(self):
         return hash(repr(self))
 
