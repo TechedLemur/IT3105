@@ -5,6 +5,8 @@ from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
 from config import Config
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
 def generate_neighbors(K=Config.k) -> dict:
@@ -201,6 +203,26 @@ class HexState(State):
             else:
                 vector.extend([0, 0])
         return np.array(vector)
+
+    def plot(self, labels: bool = False):
+
+        cdict = {0: 'grey', 1: 'red', -1: 'blue'}
+
+        G = nx.Graph()
+        colormap = []
+        for n in neighbors:
+            G.add_node(n, label=str(n))
+            colormap.append(cdict[self.board[n]])
+        for key, value in neighbors.items():
+            for n in value:
+                G.add_edge(key, n)
+
+        plt.figure(figsize=(10, 10))
+        pos = nx.spring_layout(G, seed=8)
+        nx.draw(G, pos=pos, node_color=colormap, node_size=400)
+        if labels:
+            nx.draw_networkx_labels(G, pos, verticalalignment='center')
+        plt.show()
 
     def __hash__(self):
         return hash(repr(self))
