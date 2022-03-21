@@ -131,14 +131,12 @@ class MCTS:
         game_finished, z_L = start_node.is_final_state()
         it = 0
         current_node = start_node
-        actions = []
         while not game_finished:
             if random.random() <= cfg.random_rollout_move_p:
                 legal_actions = self.current_world.get_legal_actions()
                 action = random.choice(legal_actions)
             else:
                 action = self.actor.select_action(self.current_world)
-            actions.append(action)
             # The start-node is the leaf-node which should be regarded as visited.
             if it == 0:
                 self.visited.append((start_node, action))
@@ -155,13 +153,11 @@ class MCTS:
 
             game_finished = new_state.is_final_state
             legal = new_state.get_legal_actions()
-            if not game_finished and len(legal) == 0:
-                print(":::_")
+
             player = -player
             it += 1
 
-            self.current_world = new_state.copy()
-
+            self.current_world = new_state
         z_L = -player
         self.V_i[self.iteration] = z_L
 

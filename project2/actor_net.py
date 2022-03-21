@@ -2,7 +2,6 @@ from gameworlds.gameworld import State, Action, GameWorld
 from typing import List, Tuple
 import tensorflow as tf
 from tensorflow import keras
-from mcts import MCTSNode
 from tensorflow.keras import layers
 import numpy as np
 import random
@@ -52,7 +51,8 @@ class ActorNet:
 
         probs = self.model.predict(world.get_state().as_vector())
 
-        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
@@ -72,4 +72,3 @@ class ActorNet:
 
     def load_params(self, i):
         self.model.load_weights(f"models/model{i}")
-

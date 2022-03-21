@@ -20,6 +20,7 @@ class ReinforcementLearningAgent:
         replay_buffer = np.zeros((cfg.replay_buffer_size, 20))
         i = 0
         for ep in range(cfg.episodes):
+
             world = HexState.empty_board()
             player = -1
             mcts = MCTS(self.anet, world)
@@ -35,8 +36,10 @@ class ReinforcementLearningAgent:
 
                 # action = mcts.get_best_action()
                 action = self.anet.select_action(world)
-                world.do_action(action)
+                world = world.do_action(action)
                 i += 1
+
+                # world.plot()
 
             wins[ep] = player
             # mini_batch = random.sample(replay_buffer, cfg.mini_batch_size)
