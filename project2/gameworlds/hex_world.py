@@ -1,4 +1,4 @@
-from distutils.command.config import config
+from copy import copy
 from sklearn import neighbors
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
@@ -7,6 +7,8 @@ import numpy as np
 from config import Config
 import networkx as nx
 import matplotlib.pyplot as plt
+import copy
+from IPython.display import clear_output
 
 
 def generate_neighbors(K=Config.k) -> dict:
@@ -160,7 +162,7 @@ class HexState(State):
     @staticmethod
     def empty_board(starting_player: int = 1, k=Config.k):
         board = np.zeros(k**2).reshape((k, k))
-        return HexState(is_final_state=False, player=starting_player, board=board)
+        return HexState(is_final_state=False, player=starting_player, board=board, k=k)
 
     def get_legal_actions(self) -> List[HexAction]:
 
@@ -217,12 +219,36 @@ class HexState(State):
             for n in value:
                 G.add_edge(key, n)
 
+        edgemap = []
+        k = self.k
+        for el in G.edges:
+            key = el[0]
+            n = el[1]
+            if key[0] == 0 or key[0] == k-1:
+                if key[0] == n[0]:
+                    edgemap.append('red')
+
+                else:
+                    edgemap.append('black')
+            elif key[1] == 0 or key[1] == k-1:
+                if key[1] == n[1]:
+                    edgemap.append('blue')
+                else:
+                    edgemap.append('black')
+            else:
+                edgemap.append('black')
+
+        clear_output(wait=True)
         plt.figure(figsize=(10, 10))
         pos = nx.spring_layout(G, seed=8)
-        nx.draw(G, pos=pos, node_color=colormap, node_size=400)
+        nx.draw(G, pos=pos, node_color=colormap,
+                node_size=400, edge_color=edgemap)
         if labels:
             nx.draw_networkx_labels(G, pos, verticalalignment='center')
         plt.show()
+
+    def copy(self):
+        return copy.copy(self)
 
     def __hash__(self):
         return hash(repr(self))
