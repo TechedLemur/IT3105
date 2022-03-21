@@ -169,6 +169,8 @@ class HexState(State):
         # TODO?: See if we can get faster than k^2
 
         actions = []
+        if self.is_final_state:
+            return actions
         for i in range(self.k):
             for j in range(self.k):
                 if (self.board[i][j] == 0):  # Empty space
