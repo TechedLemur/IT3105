@@ -180,12 +180,19 @@ class HexState(State):
 
         board = self.board.copy()
 
-        board[action.row][action.col] = self.player
+        r = action.row
+        c = action.col
+
+        if (board[r][c] != 0):
+            raise Exception("Cannot place here :(")
+
+        board[r][c] = self.player
 
         final = is_final_move(board=board, move=(
-            action.row, action.col), player=self.player)
+            r, c), player=self.player)
 
-        return HexState(is_final_state=final, player=-self.player, board=board, k=self.k)
+        return HexState(is_final_state=final, player=-
+                        self.player, board=board, k=self.k)
 
     def as_vector(self):
         """
@@ -248,7 +255,7 @@ class HexState(State):
         plt.show()
 
     def copy(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
     def __hash__(self):
         return hash(repr(self))
