@@ -4,12 +4,12 @@ class Config:
     """
 
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
-    k = 5
+    k = 3
 
 
 # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
     episodes = 100
-    search_games = 100
+    search_games = 300
     c = 1.0
     random_rollout_move_p = 0.1
 
