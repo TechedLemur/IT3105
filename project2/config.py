@@ -6,6 +6,9 @@ class Config:
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
     k = 5
 
+    mini_batch_size = 30
+    replay_buffer_size = 500
+
 
 # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
     episodes = 100
