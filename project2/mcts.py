@@ -1,4 +1,3 @@
-from email.policy import default
 import random
 from typing import List, Optional, Tuple
 from config import Config as cfg
@@ -54,14 +53,15 @@ class MCTS:
     Monte Carlo Tree Search-class. This represents a tree which can run simulations.
     """
 
-    def __init__(self, actor, world: GameWorld) -> None:
-        self.root: MCTSNode = MCTSNode(None, world.get_state())
+    def __init__(self, actor, state: State) -> None:
+        self.root: MCTSNode = MCTSNode(None, state)
         self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
-        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode,
+                                      Action], int] = defaultdict(int)
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
-        self.world = world
+        self.world = state
 
     def get_best_action(self) -> Action:
         """Get the best action to do as calculated by the arch from root with the most visits.
@@ -131,13 +131,14 @@ class MCTS:
         game_finished, z_L = start_node.is_final_state()
         it = 0
         current_node = start_node
+        actions = []
         while not game_finished:
             if random.random() <= cfg.random_rollout_move_p:
                 legal_actions = self.current_world.get_legal_actions()
                 action = random.choice(legal_actions)
             else:
                 action = self.actor.select_action(self.current_world)
-
+            actions.append(action)
             # The start-node is the leaf-node which should be regarded as visited.
             if it == 0:
                 self.visited.append((start_node, action))
@@ -153,8 +154,14 @@ class MCTS:
                     current_node = current_node.children[action]
 
             game_finished = new_state.is_final_state
+            legal = new_state.get_legal_actions()
+            if not game_finished and len(legal) == 0:
+                print(":::_")
             player = -player
             it += 1
+
+            self.current_world = new_state.copy()
+
         z_L = -player
         self.V_i[self.iteration] = z_L
 
@@ -176,11 +183,13 @@ class MCTS:
 
         if node.player == 1:
             index = np.argmax(
-                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) *
+                int(apply_exploraty_bonus)
             )
         else:
             index = np.argmin(
-                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) *
+                int(apply_exploraty_bonus)
             )
         return list(node.children.keys())[index]
 
@@ -201,13 +210,13 @@ class MCTS:
                 is_leaf_node = True
                 break
             best_action = self.tree_policy(current_node)
-            self.current_world.do_action(best_action)
+            self.current_world = self.current_world.do_action(best_action)
             self.visited.append((current_node, best_action))
             current_node = current_node.children[best_action]
         # Expand leaf-node.
         for action in self.current_world.get_legal_actions():
             current_node.children[action] = MCTSNode(
-                current_node, self.current_world.simulate_action(action)
+                current_node, self.current_world.do_action(action)
             )
         return current_node
 
@@ -231,7 +240,8 @@ class MCTS:
             np.array: Visit count distribution from root.
         """
 
-        visit_counts = np.array([self.N_s_a[self.root, a] for a in self.root.children.keys()])
+        visit_counts = np.array([self.N_s_a[self.root, a]
+                                for a in self.root.children.keys()])
         return visit_counts/np.sum(visit_counts)
 
     def draw_graph(self) -> Digraph:
@@ -273,7 +283,7 @@ if __name__ == "__main__":
 
     for i in range(100):
         world = NimWorld(K=2, N=5, current_pieces=5)
-        tree = MCTS(anet, world=world)
+        tree = MCTS(anet, state=world)
         player = -1
         state = world.state
         history = [state]
