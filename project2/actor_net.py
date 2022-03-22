@@ -19,9 +19,9 @@ class ActorNet:
 
         input_layer = keras.Input(shape=input_shape, name="Input")
 
-        x = layers.Dense(10, activation="relu")(input_layer)
+        x = layers.Dense(100, activation="relu")(input_layer)
 
-        x = layers.Dense(12, activation="relu")(x)
+        # x = layers.Dense(12, activation="relu")(x)
 
         output_layer = layers.Dense(output_dim, activation=tf.nn.softmax)(x)
 
@@ -50,7 +50,8 @@ class ActorNet:
         # A list with all possible actions in the game (legal and not)
         probs = self.model(np.array([world.as_vector()]))
 
-        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
@@ -60,12 +61,15 @@ class ActorNet:
 
         # TODO: Decide if we just return the 1-hot index or the actual action
         new_action = all_actions[new_action_index]
+
+        if world.player == -1:
+            new_action = new_action.transposed()
         return new_action
 
     def train(self, x_train: np.array, y_train: np.array):
         self.model.fit(x=x_train, y=y_train,
-        #batch_size=cfg.mini_batch_size
-        )
+                       # batch_size=cfg.mini_batch_size
+                       )
 
     def save_params(self, i):
         self.model.save_weights(f"models/model{i}")
