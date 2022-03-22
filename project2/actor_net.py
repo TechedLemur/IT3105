@@ -47,6 +47,7 @@ class ActorNet:
         # return random.choice(legal_actions)
 
         all_actions = world.get_all_actions()
+
         # A list with all possible actions in the game (legal and not)
         probs = self.model(np.array([world.as_vector()]))
 
@@ -73,8 +74,8 @@ class ActorNet:
                        # batch_size=cfg.mini_batch_size
                        )
 
-    def save_params(self, i):
-        self.model.save_weights(f"models/model{i}")
+    def save_params(self, i, suffix=""):
+        self.model.save_weights(f"models/model{i}{suffix}")
 
-    def load_params(self, i):
-        self.model.load_weights(f"models/model{i}")
+    def load_params(self, i, suffix=""):
+        self.model.load_weights(f"models/model{i}{suffix}")
