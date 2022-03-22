@@ -21,8 +21,14 @@ class ReinforcementLearningAgent:
         y_train = np.zeros((cfg.replay_buffer_size, cfg.k ** 2))
 
         i = 0
+        save_params_interval = cfg.episodes // cfg.M
+
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
+
+            if ep % save_params_interval == 0:
+                print("Saved network weights")
+                self.anet.save_params(ep)
 
             world = HexState.empty_board()
             player = -1

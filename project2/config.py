@@ -4,7 +4,7 @@ class Config:
     """
 
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
-    k = 3
+    k = 5
 
     mini_batch_size = 100
     replay_buffer_size = 1000
@@ -21,6 +21,7 @@ class Config:
     layers = []
     activations = []
     learning_rate = 0.001
+    epsilon = 0.3
 
     # The optimizer in the ANET, with (at least) the following options all available: Adagrad, Stochastic Gradient
     # Descent (SGD), RMSProp, and Adam.
