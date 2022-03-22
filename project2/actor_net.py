@@ -5,6 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import random
+from config import Config as cfg
 
 
 class ActorNet:
@@ -62,7 +63,7 @@ class ActorNet:
         return new_action
 
     def train(self, x_train: np.array, y_train: np.array):
-        self.model.fit(x=x_train, y=y_train)
+        self.model.fit(x=x_train, y=y_train, batch_size=cfg.mini_batch_size)
 
     def save_params(self, i):
         self.model.save_weights(f"models/model{i}")

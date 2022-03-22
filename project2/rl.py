@@ -11,7 +11,6 @@ from collections import deque
 
 class ReinforcementLearningAgent:
     def __init__(self):
-        print(cfg.k)
         self.anet = ActorNet(2 * cfg.k ** 2, cfg.k ** 2)
 
     def train(self):
@@ -30,19 +29,16 @@ class ReinforcementLearningAgent:
             mcts = MCTS(self.anet, world)
             move = 1
             while not world.is_final_state:
-                if move == 4:
-                    print("Stopping.")
-                print(f"Move {move}:")
+                # print(f"Move {move}:")
                 mcts.run_simulations()
 
                 player = -player
                 D = mcts.get_visit_counts_from_root()
 
-                print("D: ", D)
+                # print("D: ", D)
 
                 x_train[i % cfg.replay_buffer_size, :] = mcts.root.state.as_vector()
-                y_train[i % cfg.replay_buffer_size, :] = D[:: mcts.root.state.player]
-                print("y_train: ", y_train[i % cfg.replay_buffer_size])
+                y_train[i % cfg.replay_buffer_size, :] = D
 
                 action = self.anet.select_action(world)
 
@@ -57,13 +53,15 @@ class ReinforcementLearningAgent:
 
             wins[ep] = player
             mini_batch = np.random.choice(
-                min(cfg.replay_buffer_size, i+1), min(cfg.mini_batch_size, i+1), replace=False
+                min(cfg.replay_buffer_size, i),
+                min(cfg.mini_batch_size, i),
+                replace=False,
             )
-            print()
-            print(x_train[mini_batch])
-            print(y_train[mini_batch])
+            # print()
+            # print(x_train[mini_batch])
+            # print(y_train[mini_batch])
             self.anet.train(x_train[mini_batch], y_train[mini_batch])
 
         print(
-            f"Player 1 won {np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
+            f"Player 1 won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
         )

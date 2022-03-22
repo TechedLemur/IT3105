@@ -234,7 +234,8 @@ class MCTS:
         visit_counts = np.zeros((cfg.k, cfg.k))
         for a in self.root.children.keys():
             visit_counts[a.row][a.col] = self.N_s_a[self.root, a]
-
+        if self.root.player == -1:
+            visit_counts = visit_counts.T
         return (visit_counts / np.sum(visit_counts)).flatten()  # Make a distribution
 
     def draw_graph(self) -> Digraph:
