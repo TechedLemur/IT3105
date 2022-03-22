@@ -13,7 +13,7 @@ class ReinforcementLearningAgent:
     def __init__(self):
         self.anet = ActorNet(2 * cfg.k ** 2, cfg.k ** 2)
 
-    def train(self):
+    def train(self, file_suffix=""):
         wins = np.zeros(cfg.episodes)
 
         # These two constitutes the "replay buffer"
@@ -28,7 +28,7 @@ class ReinforcementLearningAgent:
 
             if ep % save_params_interval == 0:
                 print("Saved network weights")
-                self.anet.save_params(ep)
+                self.anet.save_params(ep, suffix=file_suffix)
 
             world = HexState.empty_board()
             player = -1
@@ -43,7 +43,8 @@ class ReinforcementLearningAgent:
 
                 # print("D: ", D)
 
-                x_train[i % cfg.replay_buffer_size, :] = mcts.root.state.as_vector()
+                x_train[i % cfg.replay_buffer_size,
+                        :] = mcts.root.state.as_vector()
                 y_train[i % cfg.replay_buffer_size, :] = D
 
                 action = self.anet.select_action(world)
@@ -67,7 +68,9 @@ class ReinforcementLearningAgent:
             # print(x_train[mini_batch])
             # print(y_train[mini_batch])
             self.anet.train(x_train[mini_batch], y_train[mini_batch])
-        self.anet.save_params(ep)
+        self.anet.save_params(ep, suffix=file_suffix)
         print(
             f"Player 1 won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
         )
+        self.x_train = x_train
+        self.y_train = y_train
