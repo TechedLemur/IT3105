@@ -60,7 +60,6 @@ class MCTS:
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
-        self.world = state
 
     def get_best_action(self) -> Action:
         """Get the best action to do as calculated by the arch from root with the most visits.
@@ -89,7 +88,7 @@ class MCTS:
             self.visited: List[
                 Tuple[MCTSNode, Action]
             ] = []  # Visited nodes are appended here which is used during backpropagation
-            self.current_world = self.world.copy()
+            self.current_world = self.root.state.copy()
             self.iteration = i
             leaf_node = self.apply_tree_policy()
             self.do_rollout(leaf_node)

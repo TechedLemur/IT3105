@@ -47,7 +47,7 @@ class ActorNet:
 
         all_actions = world.get_all_actions()
         # A list with all possible actions in the game (legal and not)
-        probs = self.model.predict(np.array([world.as_vector()]))
+        probs = self.model(np.array([world.as_vector()]))
 
         mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
 
