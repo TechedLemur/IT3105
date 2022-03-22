@@ -11,13 +11,16 @@ from collections import deque
 
 class ReinforcementLearningAgent:
     def __init__(self):
-        self.anet = ActorNet(100, 100)
-        pass
+        print(cfg.k)
+        self.anet = ActorNet(2*cfg.k**2, cfg.k**2)
 
     def train(self):
         wins = np.zeros(cfg.episodes)
 
-        replay_buffer = np.zeros((cfg.replay_buffer_size, 20))
+        # These two constitutes the "replay buffer"
+        x_train = np.zeros((cfg.replay_buffer_size,2*cfg.k**2))
+        y_train = np.zeros((cfg.replay_buffer_size,cfg.k**2))
+
         i = 0
         for ep in range(cfg.episodes):
 
@@ -30,9 +33,9 @@ class ReinforcementLearningAgent:
 
                 player = -player
                 D = mcts.get_visit_counts_from_root()
-                D = D[::mcts.root.player]
 
-                # replay_buffer[i % cfg.replay_buffer_size,:] = np.concatenate(mcts.root.state.as_vector(), D)
+                x_train[i % cfg.replay_buffer_size, :] = mcts.root.state.as_vector()
+                y_train[i % cfg.replay_buffer_size, :] = D[::mcts.root.state.player]
 
                 # action = mcts.get_best_action()
                 action = self.anet.select_action(world)
@@ -42,8 +45,11 @@ class ReinforcementLearningAgent:
                 # world.plot()
 
             wins[ep] = player
-            # mini_batch = random.sample(replay_buffer, cfg.mini_batch_size)
-            # print(mini_batch.size)
-            # self.anet.train(mini_batch)
+            mini_batch = np.random.choice(
+                cfg.replay_buffer_size, cfg.mini_batch_size, replace=False
+            )
+            self.anet.train(x_train[mini_batch], y_train[mini_batch])
 
-        print(f"Player 1 won {np.count_nonzero(wins)}% of the games!")
+        print(
+            f"Player 1 won {np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
+        )

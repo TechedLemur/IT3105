@@ -56,8 +56,7 @@ class MCTS:
     def __init__(self, actor, state: State) -> None:
         self.root: MCTSNode = MCTSNode(None, state)
         self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
-        self.N_s_a: defaultdict[tuple[MCTSNode,
-                                      Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
@@ -179,13 +178,11 @@ class MCTS:
 
         if node.player == 1:
             index = np.argmax(
-                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) *
-                int(apply_exploraty_bonus)
+                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             )
         else:
             index = np.argmin(
-                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) *
-                int(apply_exploraty_bonus)
+                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             )
         return list(node.children.keys())[index]
 
@@ -235,10 +232,11 @@ class MCTS:
         Returns:
             np.array: Visit count distribution from root.
         """
+        visit_counts = np.zeros((cfg.k, cfg.k))
+        for a in self.root.children.keys():
+            visit_counts[a.row][a.col] = self.N_s_a[self.root, a]
 
-        visit_counts = np.array([self.N_s_a[self.root, a]
-                                for a in self.root.children.keys()])
-        return visit_counts/np.sum(visit_counts)
+        return (visit_counts / np.sum(visit_counts)).flatten()  # Make a distribution
 
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used
@@ -253,50 +251,19 @@ class MCTS:
         nodes_to_visit = [self.root]
         node = nodes_to_visit[0]
         dot.node(
-            str(node.state) + str(node.id),
-            f"Pieces: {node.state.pieces}, N: {self.N_s[node]}",
+            str(node.state) + str(node.id), f"N: {self.N_s[node]}",
         )
         while nodes_to_visit:
             node = nodes_to_visit.pop()
 
             for key, val in node.children.items():
                 dot.node(
-                    name=str(val.state) + str(val.id),
-                    label=f"Pieces: {val.state.pieces}, N: {self.N_s[val]}",
+                    name=str(val.state) + str(val.id), label=f"N: {self.N_s[val]}",
                 )
                 dot.edge(
                     str(node.state) + str(node.id),
                     str(val.state) + str(val.id),
-                    f"Pieces: {key.pieces}, Q: {self.Q[(node, key)]:.2f}, N: {self.N_s_a[(node, key)]}",
+                    f"Move: ({key.row}, {key.col}), Q: {self.Q[(node, key)]:.2f}, N: {self.N_s_a[(node, key)]}",
                 )
                 nodes_to_visit.append(val)
         return dot
-
-
-if __name__ == "__main__":
-    anet = ActorNet(input_shape=10, output_dim=10)
-    wins = np.zeros(100)
-
-    for i in range(100):
-        world = NimWorld(K=2, N=5, current_pieces=5)
-        tree = MCTS(anet, state=world)
-        player = -1
-        state = world.state
-        history = [state]
-        j = 0
-        while not world.get_state().is_final_state:
-            tree.run_simulations()
-
-            player = -player
-            D = tree.get_visit_counts_from_root()
-            graph = tree.draw_graph()
-            graph.render(f"mcts-graphs/graph{j}")
-            j += 1
-            action = tree.get_best_action()
-            world.do_action(action)
-        print(f"Player {player} won!")
-        wins[i] = player
-
-        if player != 1:
-            break
-    print(f"Player 1 won {np.average(wins)*100}%")

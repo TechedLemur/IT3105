@@ -13,7 +13,7 @@ from IPython.display import clear_output
 
 def generate_neighbors(K=Config.k) -> dict:
     """
-    Helper method for generating a look-up table for neighbouring nodes. 
+    Helper method for generating a look-up table for neighbouring nodes.
     Generate once and reuse to increase performance.
     """
     neighbors = {}
@@ -118,7 +118,7 @@ class HexState(State):
     @staticmethod
     def from_array(array: List) -> State:
         """
-        Convert online game representation to HexState. 
+        Convert online game representation to HexState.
         Online format looks like this:
         Given the following state for a 5x5 Hex game
                 state = [
@@ -177,6 +177,15 @@ class HexState(State):
                     actions.append(HexAction(row=i, col=j))
 
         return actions
+
+    def get_all_actions(self)->List[Action]:
+        actions = []
+        for i in range(self.k):
+            for j in range(self.k):
+                actions.append(HexAction(row=i, col=j))
+        return actions
+
+
 
     def do_action(self, action: HexAction) -> State:
 

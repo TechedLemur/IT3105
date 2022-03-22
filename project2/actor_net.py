@@ -43,16 +43,13 @@ class ActorNet:
         legal_actions = world.get_legal_actions()
 
         # While working on MCTS, just return random action
-        return random.choice(legal_actions)
+        # return random.choice(legal_actions)
 
-        all_actions = (
-            world.get_all_actions()
-        )  # A list with all possible actions in the game (legal and not)
+        all_actions = world.get_all_actions()
+        # A list with all possible actions in the game (legal and not)
+        probs = self.model.predict(np.array([world.as_vector()]))
 
-        probs = self.model.predict(world.get_state().as_vector())
-
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
