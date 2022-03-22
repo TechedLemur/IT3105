@@ -67,7 +67,7 @@ class ReinforcementLearningAgent:
             # print(x_train[mini_batch])
             # print(y_train[mini_batch])
             self.anet.train(x_train[mini_batch], y_train[mini_batch])
-
+        self.anet.save_params(ep)
         print(
             f"Player 1 won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
         )
