@@ -52,8 +52,10 @@ class ActorNet:
 
         mask = np.array(
             [a in legal_actions for a in all_actions]).astype(np.float32)
-
-        probs *= mask
+        if world.player == -1:
+            probs *= mask.reshape((world.k, world.k)).T.flatten()
+        else:
+            probs *= mask
 
         probs = probs / np.sum(probs)
 
