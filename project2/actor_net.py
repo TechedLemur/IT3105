@@ -63,7 +63,9 @@ class ActorNet:
         return new_action
 
     def train(self, x_train: np.array, y_train: np.array):
-        self.model.fit(x=x_train, y=y_train, batch_size=cfg.mini_batch_size)
+        self.model.fit(x=x_train, y=y_train,
+        #batch_size=cfg.mini_batch_size
+        )
 
     def save_params(self, i):
         self.model.save_weights(f"models/model{i}")
