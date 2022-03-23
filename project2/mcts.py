@@ -12,6 +12,7 @@ from collections import defaultdict
 from graphviz import Digraph
 
 from gameworlds.nim_world import NimWorld
+from gameworlds.hex_world import HexState
 
 
 class MCTSNode:
@@ -176,14 +177,13 @@ class MCTS:
         Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
         if node.player == 1:
-            index = np.argmax(
-                Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
-            )
+            action_values = Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(action_values == np.max(action_values))
         else:
-            index = np.argmin(
-                Q_s_a - MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
-            )
-        return list(node.children.keys())[index]
+            action_values = Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(action_values == np.min(action_values))
+
+        return list(node.children.keys())[np.random.choice(max_indices)] # Choose randomly between the best choices (if they have equal values)
 
     def apply_tree_policy(self) -> MCTSNode:
         """Apply the tree search policy from root until a leaf-node is found.
@@ -267,3 +267,28 @@ class MCTS:
                 )
                 nodes_to_visit.append(val)
         return dot
+
+if __name__ == "__main__":
+    anet = ActorNet(input_shape=10, output_dim=10)
+    wins = np.zeros(100)
+
+    for i in range(100):
+        world = HexState.empty_board()
+        tree = MCTS(anet, world)
+        player = -1
+        j = 0
+        while not world.is_final_state:
+            tree.run_simulations()
+            player = -player
+            D = tree.get_visit_counts_from_root()
+            graph = tree.draw_graph()
+            graph.render(f"mcts-graphs/graph{j}")
+            j += 1
+            action = tree.get_best_action()
+            world = world.do_action(action)
+        print(f"Player {player} won!")
+        wins[i] = player
+
+        if player != 1:
+            break
+    print(f"Player 1 won {np.average(wins)*100}%")

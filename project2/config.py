@@ -4,7 +4,7 @@ class Config:
     """
 
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
-    k = 5
+    k = 3
 
     mini_batch_size = 100
     replay_buffer_size = 1000
