@@ -22,6 +22,7 @@ class Config:
     activations = []
     learning_rate = 0.001
     epsilon = 0.3
+    epsilon_decay = 0.99
 
     # The optimizer in the ANET, with (at least) the following options all available: Adagrad, Stochastic Gradient
     # Descent (SGD), RMSProp, and Adam.

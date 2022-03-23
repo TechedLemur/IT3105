@@ -33,6 +33,13 @@ class ActorNet:
             metrics=["accuracy"],
         )
 
+        self.epsilon = cfg.epsilon
+
+    def update_epsilon(self):
+        self.epsilon *= cfg.epsilon_decay
+        if self.epsilon < 0.0001:
+            self.epsilon = 0
+
     def select_action(self, world: GameWorld) -> Action:
         """
         Select an action based on the state.
@@ -43,16 +50,15 @@ class ActorNet:
 
         legal_actions = world.get_legal_actions()
 
-        # While working on MCTS, just return random action
-        # return random.choice(legal_actions)
+        if random.random() < self.epsilon:
+            return random.choice(legal_actions)
 
         all_actions = world.get_all_actions()
 
         # A list with all possible actions in the game (legal and not)
         probs = self.model(np.array([world.as_vector()]))
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
         if world.player == -1:
             probs *= mask.reshape((world.k, world.k)).T.flatten()
         else:
@@ -70,9 +76,12 @@ class ActorNet:
         return new_action
 
     def train(self, x_train: np.array, y_train: np.array):
-        self.model.fit(x=x_train, y=y_train,
-                       # batch_size=cfg.mini_batch_size
-                       )
+        self.model.fit(
+            x=x_train,
+            y=y_train,
+            # batch_size=cfg.mini_batch_size
+        )
+        self.update_epsilon()
 
     def save_params(self, i, suffix=""):
         self.model.save_weights(f"models/model{i}{suffix}")
