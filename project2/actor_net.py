@@ -15,7 +15,7 @@ class ActorNet:
 
     def __init__(self, input_shape, output_dim) -> None:
 
-        # TODO: maybe try convolutional later.
+        # TODO: add more layers
 
         input_layer = keras.Input(shape=input_shape, name="Input")
 
@@ -23,13 +23,23 @@ class ActorNet:
 
         # x = layers.Dense(12, activation="relu")(x)
 
-        output_layer = layers.Dense(output_dim, activation=tf.nn.softmax)(x)
+        policy_output_layer = layers.Dense(
+            output_dim, activation=tf.nn.softmax, name="policy")(x)
+        value_output_layer = layers.Dense(
+            1, activation=tf.nn.tanh, name="value")(x)
 
-        self.model = keras.Model(input_layer, output_layer, name="ANET")
+        self.model = keras.Model(inputs=input_layer, outputs=[
+                                 policy_output_layer, value_output_layer], name="2HNET")
 
+        losses = {
+            "policy": "categorical_crossentropy",
+            "value": "mse",
+        }
+        lossWeights = {"policy": 1.0, "value": 1.0}
         self.model.compile(
             optimizer="adam",
-            loss=keras.losses.CategoricalCrossentropy(),
+            loss=losses,
+            loss_weights=lossWeights,
             metrics=["accuracy"],
         )
 
@@ -56,9 +66,10 @@ class ActorNet:
         all_actions = world.get_all_actions()
 
         # A list with all possible actions in the game (legal and not)
-        probs = self.model(np.array([world.as_vector()]))
+        probs = self.model(np.array([world.as_vector()]))[0]
 
-        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
         if world.player == -1:
             probs *= mask.reshape((world.k, world.k)).T.flatten()
         else:
@@ -75,10 +86,10 @@ class ActorNet:
             new_action = new_action.transposed()
         return new_action
 
-    def train(self, x_train: np.array, y_train: np.array):
+    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array):
         self.model.fit(
             x=x_train,
-            y=y_train,
+            y={"policy": y_train, "value": y_train_value}
             # batch_size=cfg.mini_batch_size
         )
         self.update_epsilon()
