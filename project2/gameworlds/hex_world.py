@@ -178,14 +178,12 @@ class HexState(State):
 
         return actions
 
-    def get_all_actions(self)->List[Action]:
+    def get_all_actions(self) -> List[Action]:
         actions = []
         for i in range(self.k):
             for j in range(self.k):
                 actions.append(HexAction(row=i, col=j))
         return actions
-
-
 
     def do_action(self, action: HexAction) -> State:
 
@@ -205,24 +203,35 @@ class HexState(State):
         return HexState(is_final_state=final, player=-
                         self.player, board=board, k=self.k)
 
-    def as_vector(self):
+    def as_vector(self, mode=1):
         """
         Returns the game state as a vector intended to use as input for the ANET.
-        We want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
+
         """
-        vector = []
-        if self.player == 1:
-            board = self.board
-        else:
-            board = -self.board.T  # Transpose and swap colors
-        for p in board.flatten():
-            if p == 1:
-                vector.extend([1, 0])
-            elif p == -1:
-                vector.extend([0, 1])
+        if mode == 0:  # Basic, we want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
+            vector = []
+            if self.player == 1:
+                board = self.board
             else:
-                vector.extend([0, 0])
-        return np.array(vector)
+                board = -self.board.T  # Transpose and swap colors
+            for p in board.flatten():
+                if p == 1:
+                    vector.extend([1, 0])
+                elif p == -1:
+                    vector.extend([0, 1])
+                else:
+                    vector.extend([0, 0])
+            return np.array(vector)
+
+        if mode == 1:
+            # kxkx4 array, 0: player 1 stones, 1: player 2 stones: 3: empty stones: 4: 1 if player 1,0 if player 2
+            array = np.zeros((self.k, self.k, 4))
+
+            array[:, :, 0] = self.board > 0
+            array[:, :, 1] = self.board < 0
+            array[:, :, 2] = self.board == 0
+            array[:, :, 3] = self.player == 1
+            return array
 
     def plot(self, labels: bool = False):
 

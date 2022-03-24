@@ -11,14 +11,20 @@ from collections import deque
 
 class ReinforcementLearningAgent:
     def __init__(self):
-        self.anet = ActorNet(2 * cfg.k ** 2, cfg.k ** 2)
+        self.anet = ActorNet(cfg.input_shape, cfg.output_length)
 
     def train(self, file_suffix=""):
         wins = np.zeros(cfg.episodes)
 
-        # These two constitutes the "replay buffer"
-        x_train = np.zeros((cfg.replay_buffer_size, 2 * cfg.k ** 2))
-        y_train = np.zeros((cfg.replay_buffer_size, cfg.k ** 2))
+        x_size = list(cfg.input_shape)
+
+        x_size.insert(0, cfg.replay_buffer_size)
+
+        y_size = (cfg.replay_buffer_size, cfg.output_length)
+
+        # These three constitutes the "replay buffer"
+        x_train = np.zeros(x_size)
+        y_train = np.zeros(y_size)
         y_train_value = np.zeros((cfg.replay_buffer_size, 1))
 
         i = 0

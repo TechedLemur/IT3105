@@ -6,7 +6,7 @@ class Config:
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
     k = 3
 
-    mini_batch_size = 100
+    mini_batch_size = 500
     replay_buffer_size = 1000
 
     # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
@@ -18,11 +18,14 @@ class Config:
     # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
     # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
 
+    input_shape = (k, k, 4)
+    # input_length = k*k*4
+    output_length = k*k
     layers = []
     activations = []
     learning_rate = 0.001
     epsilon = 0.3
-    epsilon_decay = 0.99
+    epsilon_decay = 0.97
 
     # The optimizer in the ANET, with (at least) the following options all available: Adagrad, Stochastic Gradient
     # Descent (SGD), RMSProp, and Adam.
