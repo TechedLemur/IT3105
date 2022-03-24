@@ -15,6 +15,11 @@ class Config:
     c = 1.0
     random_rollout_move_p = 0.1
 
+    rollout_chance = 0.6  # Chance to use rollout and not critic
+    rollout_decay = 0.9
+
+    reward_decay = 0.4  # Decay reward of early moves
+
     # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
     # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
 

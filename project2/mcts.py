@@ -1,3 +1,4 @@
+import cgi
 import random
 from typing import List, Optional, Tuple
 from config import Config as cfg
@@ -57,7 +58,8 @@ class MCTS:
     def __init__(self, actor, state: State) -> None:
         self.root: MCTSNode = MCTSNode(None, state)
         self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
-        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode,
+                                      Action], int] = defaultdict(int)
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
@@ -73,7 +75,7 @@ class MCTS:
         self.root = self.root.children[action]
         return action
 
-    def run_simulations(self) -> None:
+    def run_simulations(self, rollout_chance=cfg.rollout_chance) -> None:
         """Run M simulations from the current state.
         A simulation consists of:
         1. Applying tree policy to a leaf node.
@@ -84,7 +86,6 @@ class MCTS:
         self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
             lambda: np.zeros(cfg.search_games)
         )  # Represents the visits of arch on iteration i. (Using indice to get the ith visit count).
-
         for i in range(cfg.search_games):
             self.visited: List[
                 Tuple[MCTSNode, Action]
@@ -92,7 +93,16 @@ class MCTS:
             self.current_world = self.root.state.copy()
             self.iteration = i
             leaf_node = self.apply_tree_policy()
-            self.do_rollout(leaf_node)
+
+            if random.random() < rollout_chance:
+                self.do_rollout(leaf_node)
+            else:  # Use critic
+                is_finished, z = leaf_node.is_final_state()
+                if not is_finished:
+                    a, z = self.actor.get_action_and_reward(leaf_node.state)
+                    # Add node to visited
+                    self.visited.append((leaf_node, a))
+                self.V_i[self.iteration] = z
             self.backpropagate()
 
     def backpropagate(self) -> None:
@@ -115,6 +125,9 @@ class MCTS:
                 / self.N_s_a[(node, action)]
                 * sum(self.d_s_a_i[(node, action)] * self.V_i)
             )
+
+    def decay_rollout_chance(self):
+        self.rollout_p *= cfg.rollout_decay
 
     def do_rollout(self, start_node: MCTSNode, add_rollout_nodes_to_tree=False) -> None:
         """Do a rollout from a leaf-node until a final state is found.
@@ -177,13 +190,21 @@ class MCTS:
         Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
         if node.player == 1:
-            action_values = Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(action_values == np.max(action_values))
+            action_values = Q_s_a + \
+                MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(
+                action_values == np.max(action_values))
         else:
-            action_values = Q_s_a + MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(action_values == np.min(action_values))
+            action_values = Q_s_a + \
+                MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(
+                action_values == np.min(action_values))
 
-        return list(node.children.keys())[np.random.choice(max_indices)] # Choose randomly between the best choices (if they have equal values)
+        if not max_indices.any():
+            return random.choice(list(node.children.keys()))
+
+        # Choose randomly between the best choices (if they have equal values)
+        return list(node.children.keys())[np.random.choice(max_indices)]
 
     def apply_tree_policy(self) -> MCTSNode:
         """Apply the tree search policy from root until a leaf-node is found.
@@ -234,9 +255,8 @@ class MCTS:
         visit_counts = np.zeros((cfg.k, cfg.k))
         for a in self.root.children.keys():
             visit_counts[a.row][a.col] = self.N_s_a[self.root, a]
-        if self.root.player == -1:
-            visit_counts = visit_counts.T
-        return (visit_counts / np.sum(visit_counts)).flatten()  # Make a distribution
+        # Make a distribution
+        return (visit_counts / np.sum(visit_counts)).flatten()
 
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used
@@ -267,6 +287,7 @@ class MCTS:
                 )
                 nodes_to_visit.append(val)
         return dot
+
 
 if __name__ == "__main__":
     anet = ActorNet(input_shape=10, output_dim=10)

@@ -100,16 +100,55 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
+        probs = np.around(probs, 4)
+
         probs = probs / np.sum(probs)
 
-        new_action_index = np.argmax(probs)
+        s = np.sum(probs[0])
+        # Select an action based on the probability estimate
+        new_action = np.random.choice(all_actions, p=probs[0])
 
-        # TODO: Decide if we just return the 1-hot index or the actual action
-        new_action = all_actions[new_action_index]
+        # new_action = all_actions[new_action_index]
 
         # if world.player == -1:
         # new_action = new_action.transposed()
         return new_action
+
+    def get_action_and_reward(self, state: State, greedy=False):
+
+        legal_actions = state.get_legal_actions()
+
+        all_actions = state.get_all_actions()
+
+        # A list with all possible actions in the game (legal and not)
+        prediction = self.model(np.array([state.as_vector()]))
+        probs = prediction[0]
+        value = prediction[1][0][0].numpy()
+
+        if random.random() < self.epsilon and not greedy:
+            action = random.choice(legal_actions)
+            return action, value
+
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
+        # if world.player == -1:
+        # probs *= mask.reshape((world.k, world.k)).T.flatten()
+        # else:
+        # probs *= mask
+        probs *= mask
+
+        probs = np.around(probs, 4)
+
+        probs = probs / np.sum(probs)
+
+        # Select an action based on the probability estimate
+        action = np.random.choice(all_actions, p=probs[0])
+
+        # new_action = all_actions[new_action_index]
+
+        # if world.player == -1:
+        # new_action = new_action.transposed()
+        return action, value
 
     def evaluate_state(self, state: State) -> float:
         # TODO: See if it makes sense to predict multiple states at the same time
