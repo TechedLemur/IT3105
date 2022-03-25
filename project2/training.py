@@ -1,6 +1,7 @@
 from rl import ReinforcementLearningAgent
 from config import Config
-
+from datetime import datetime
+import numpy as np
 
 suffix = f"{Config.k}x{Config.k}"
 
@@ -8,6 +9,12 @@ suffix = f"{Config.k}x{Config.k}"
 if __name__ == '__main__':
     rlAgent = ReinforcementLearningAgent()
 
-    rlAgent.train(file_suffix=suffix)
+    rlAgent.train(file_suffix=suffix, n_parallel=10)
 
-    print(f"Length of train set: {len(rlAgent.x_train)}")
+    print(f"Saving {len(rlAgent.x_train)} cases")
+
+    # Save data for possible later training
+    with open(f'data/{datetime.now().isoformat()[:19]}_{suffix}.npy', 'wb') as f:
+        np.save(f, rlAgent.x_train)
+        np.save(f, rlAgent.y_train)
+        np.save(f, rlAgent.y_train_value)
