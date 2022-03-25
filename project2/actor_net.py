@@ -1,4 +1,3 @@
-from os import name
 from gameworlds.gameworld import State, Action, GameWorld
 from typing import List, Tuple
 import tensorflow as tf
@@ -7,6 +6,8 @@ from tensorflow.keras import layers
 import numpy as np
 import random
 from config import Config as cfg
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # Disable gpu
 
 
 class ActorNet:
@@ -68,6 +69,12 @@ class ActorNet:
         )
 
         self.epsilon = cfg.epsilon
+
+    def set_weights(self, weights):
+        self.model.set_weights(weights)
+
+    def get_weights(self):
+        return self.model.get_weights()
 
     def update_epsilon(self):
         self.epsilon *= cfg.epsilon_decay

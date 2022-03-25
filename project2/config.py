@@ -10,7 +10,7 @@ class Config:
     replay_buffer_size = 1000
 
     # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
-    episodes = 100
+    episodes = 10
     search_games = 300
     c = 1.0
     random_rollout_move_p = 0.1

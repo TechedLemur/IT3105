@@ -1,4 +1,3 @@
-import cgi
 import random
 from typing import List, Optional, Tuple
 from config import Config as cfg

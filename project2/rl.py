@@ -9,28 +9,34 @@ from gameworlds.gameworld import GameWorld
 import numpy as np
 from collections import deque
 import timeit
+from multiprocessing import Pool, cpu_count
 
 
 class ReinforcementLearningAgent:
     def __init__(self):
         self.anet = ActorNet(cfg.input_shape, cfg.output_length)
 
-    def episode(self, ep: int, anet, rollout_chance=cfg.rollout_chance):
-        print(f"Episode {ep}")
+    @staticmethod
+    def episode(params):
 
+        anet_weigths = params[0]
+        starting_player = params[1]
+        rollout_chance = params[2]
         # if ep % save_params_interval == 0:
         #     print("Saved network weights")
         #     self.anet.save_params(ep, suffix=file_suffix)
 
-        world = HexState.empty_board()
+        world = HexState.empty_board(starting_player=starting_player)
         # player = -1
+        anet = ActorNet(cfg.input_shape, cfg.output_length)
+        anet.set_weights(anet_weigths)
         mcts = MCTS(anet, world)
         move = 1
         x_train = []
         y_train = []
 
-        reward_factors = np.array([])
-
+        reward_factors = []
+        all_actions = world.get_all_actions()
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
@@ -43,43 +49,43 @@ class ReinforcementLearningAgent:
             x_train.append(mcts.root.state.as_vector())
             y_train.append(D)
 
-            reward_factors *= cfg.reward_decay  # Decay rewards after each move
-            reward_factors = np.append(reward_factors, 1)
+            # Decay rewards after each move
+            reward_factors = [x*cfg.reward_decay for x in reward_factors]
+            reward_factors.append(1)
 
-            action = anet.select_action(world)
+            # Choose actual move (a*) based on D
+            # Round to avoid floating point error
+            probs = np.around(D, 3)
+            probs = probs / np.sum(probs)  # Normalize
+            # Select action based on distribution D
+
+            action = np.random.choice(all_actions, p=probs)
 
             world = world.do_action(action)
             mcts.root = mcts.root.children[action]
-            i += 1
             move += 1
 
         winner = -world.player
 
-        y_train_value = winner * reward_factors
+        y_train_value = winner * np.array(reward_factors)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
+        return np.array(x_train), np.array(y_train), y_train_value, winner
 
-        return x_train, y_train, y_train_value, winner
+    def train(self, file_suffix="", n_parallel=8):
+        wins = []
 
-    def train(self, file_suffix=""):
-        wins = np.zeros(cfg.episodes)
-
-        x_size = list(cfg.input_shape)
-
-        x_size.insert(0, cfg.replay_buffer_size)
-
-        y_size = (cfg.replay_buffer_size, cfg.output_length)
-
-        # These three constitutes the "replay buffer"
-        x_train = np.zeros(x_size)
-        y_train = np.zeros(y_size)
-        y_train_value = np.zeros(cfg.replay_buffer_size)
+        x_train = np.array([])
+        y_train = np.array([])
+        y_train_value = np.array([])
 
         i = 0
         save_params_interval = cfg.episodes // cfg.M
 
         rollout_chance = cfg.rollout_chance
+
+        starting_player = 1
 
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
@@ -88,71 +94,42 @@ class ReinforcementLearningAgent:
                 print("Saved network weights")
                 self.anet.save_params(ep, suffix=file_suffix)
 
-            world = HexState.empty_board()
-            # player = -1
-            mcts = MCTS(self.anet, world)
-            move = 1
+            n = min(n_parallel, cpu_count())
+            print(f"Running {n} games in parallel")
 
-            buffer_indices = []
-            buffer_reward_factors = np.array([])
+            weights = self.anet.get_weights()
 
-            all_actions = world.get_all_actions()
-            while not world.is_final_state:
-                # print(f"Move {move}:")
-                mcts.run_simulations(rollout_chance=rollout_chance)
+            params = [(weights, starting_player, rollout_chance)
+                      for _ in range(n)]
 
-                # player = -player
-                D = mcts.get_visit_counts_from_root()
+            with Pool(processes=n) as pool:
 
-                # print("D: ", D)
+                result = pool.map(self.episode, params)
 
-                j = i % cfg.replay_buffer_size
+            for r in result:
+                if not x_train.size:
+                    x_train = r[0]
+                    y_train = r[1]
+                    y_train_value = r[2]
+                else:
+                    x_train = np.concatenate((x_train, r[0]))
+                    y_train = np.concatenate((y_train, r[1]))
+                    y_train_value = np.concatenate((y_train_value, r[2]))
+                wins.append(r[3])
 
-                x_train[j, :] = mcts.root.state.as_vector()
-                y_train[j, :] = D
-                buffer_indices.append(j)
-
-                buffer_reward_factors *= cfg.reward_decay  # Decay rewards after each move
-                buffer_reward_factors = np.append(buffer_reward_factors, 1)
-
-                # action = self.anet.select_action(world)
-                # Choose actual move (a*) based on D
-
-                # Round to avoid floating point error
-                probs = np.around(D, 3)
-                probs = probs / np.sum(probs)  # Normalize
-                # Select action based on distribution D
-
-                action = np.random.choice(all_actions, p=probs)
-
-                world = world.do_action(action)
-                # graph = mcts.draw_graph()
-                # graph.render(f"mcts-graphs/graph{move}")
-                mcts.root = mcts.root.children[action]
-                i += 1
-                move += 1
-
-                # world.plot()
-
-            rollout_chance *= cfg.rollout_decay  # Decay rollout chance
-
-            winner = -world.player
-            y_train_value[buffer_indices] = winner * buffer_reward_factors
-            # the critic can be trained by using the score obtained at the end of each
-            # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
-            # episode as input and tries to map that state to the target (or a discounted version of the target)
-
-            wins[ep] = winner
-            mini_batch = np.random.choice(
-                min(cfg.replay_buffer_size, i),
-                min(cfg.mini_batch_size, i),
-                replace=False,
-            )
+            # mini_batch = np.random.choice(
+            #     min(cfg.replay_buffer_size, i),
+            #     min(cfg.mini_batch_size, i),
+            #     replace=False,
+            # )
             # print()
             # print(x_train[mini_batch])
             # print(y_train[mini_batch])
-            self.anet.train(x_train[mini_batch], y_train[mini_batch],
-                            y_train_value=y_train_value[mini_batch])
+            self.anet.train(x_train, y_train,
+                            y_train_value=y_train_value)
+            # self.anet.train(x_train[mini_batch], y_train[mini_batch],
+            #                 y_train_value=y_train_value[mini_batch])
+        wins = np.array(wins)
         self.anet.save_params(ep, suffix=file_suffix)
         print(
             f"Player 1 won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
