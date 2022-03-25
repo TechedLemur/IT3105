@@ -203,6 +203,20 @@ class HexState(State):
         return HexState(is_final_state=final, player=-
                         self.player, board=board, k=self.k)
 
+    def inverted(self):
+        """
+        Returns a new state where the board is transposed and the colors reversed
+        """
+        return HexState(is_final_state=self.is_final_state, player=-self.player, board=-self.board.T)
+
+    def rotate180(self):
+        """
+        Returns a new state where the board is rotated 180 degrees, as well as the inverted version of this state
+        """
+
+        return (HexState(is_final_state=self.is_final_state, player=self.player, board=np.rot90(self.board, 2)),
+                HexState(is_final_state=self.is_final_state, player=-self.player, board=-np.rot90(self.board, 2).T))
+
     def as_vector(self, mode=1):
         """
         Returns the game state as a vector intended to use as input for the ANET.
