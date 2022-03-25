@@ -26,11 +26,6 @@ class MCTSNode:
         self.children: dict[Action, MCTSNode] = {}
         self.visits = 0
 
-        if not self.parent:
-            self.player = 1
-        else:
-            self.player = -self.parent.player
-
         self.id = uuid.uuid4()
 
     def is_final_state(self) -> Tuple[bool, int]:
@@ -41,10 +36,10 @@ class MCTSNode:
             Either -1 (lose), 0 (draw) or +1 (win) depending on the type of game.
         """
 
-        return (self.state.is_final_state, -self.player)
+        return (self.state.is_final_state, -self.state.player)
 
     def __repr__(self):
-        return f"MCTSNode(state={self.state},visits={self.visits},player={self.player})"
+        return f"MCTSNode(state={self.state},visits={self.visits},player={self.state.player})"
 
     def __hash__(self):
         return self.id.int
@@ -139,7 +134,7 @@ class MCTS:
             add_rollout_nodes_to_tree: (bool): If rollout nodes should be added to the tree.
         """
 
-        player = start_node.player
+        player = start_node.state.player
         game_finished, z_L = start_node.is_final_state()
         it = 0
         current_node = start_node
@@ -189,13 +184,13 @@ class MCTS:
         N_s_a = np.array([self.N_s_a[(node, a)] for a in node.children.keys()])
         Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
-        if node.player == 1:
+        if node.state.player == 1:
             action_values = Q_s_a + \
                 MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.max(action_values))
         else:
-            action_values = Q_s_a + \
+            action_values = Q_s_a - \
                 MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.min(action_values))
