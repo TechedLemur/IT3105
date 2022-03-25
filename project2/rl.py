@@ -18,7 +18,7 @@ class ReinforcementLearningAgent:
 
     @staticmethod
     def episode(params):
-
+        t1 = timeit.default_timer()
         anet_weigths = params[0]
         starting_player = params[1]
         rollout_chance = params[2]
@@ -45,13 +45,29 @@ class ReinforcementLearningAgent:
             D = mcts.get_visit_counts_from_root()
 
             # print("D: ", D)
-
-            x_train.append(mcts.root.state.as_vector())
-            y_train.append(D)
-
             # Decay rewards after each move
             reward_factors = [x*cfg.reward_decay for x in reward_factors]
+            state = mcts.root.state
+            D_matrix = D.reshape((state.k, state.k))
+
+            # Add training cases, and their symmetric versions
+            x_train.append(state.as_vector())
+            y_train.append(D)
             reward_factors.append(1)
+
+            x_train.append(state.inverted().as_vector())
+            y_train.append(D_matrix.T.flatten())
+            reward_factors.append(-1)
+
+            rot, invRot = state.rotate180()
+
+            x_train.append(rot.as_vector())
+            y_train.append(np.rot90(D_matrix, 2).flatten())
+            reward_factors.append(1)
+
+            x_train.append(invRot.as_vector())
+            y_train.append(np.rot90(D_matrix.T, 2).flatten())
+            reward_factors.append(-1)
 
             # Choose actual move (a*) based on D
             # Round to avoid floating point error
@@ -64,9 +80,10 @@ class ReinforcementLearningAgent:
             world = world.do_action(action)
             mcts.root = mcts.root.children[action]
             move += 1
-
+        t2 = timeit.default_timer()
         winner = -world.player
 
+        print(f"Game finished - used {t2-t1} seconds")
         y_train_value = winner * np.array(reward_factors)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
