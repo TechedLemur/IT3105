@@ -17,19 +17,17 @@ class ReinforcementLearningAgent:
         self.anet = ActorNet(cfg.input_shape, cfg.output_length)
 
     @staticmethod
-    def episode(params):
+    def episode(params, anet=None):
         t1 = timeit.default_timer()
         anet_weigths = params[0]
         starting_player = params[1]
         rollout_chance = params[2]
-        # if ep % save_params_interval == 0:
-        #     print("Saved network weights")
-        #     self.anet.save_params(ep, suffix=file_suffix)
 
         world = HexState.empty_board(starting_player=starting_player)
-        # player = -1
-        anet = ActorNet(cfg.input_shape, cfg.output_length)
-        anet.set_weights(anet_weigths)
+        if not anet:
+            anet = ActorNet(cfg.input_shape, cfg.output_length)
+            anet.set_weights(anet_weigths)
+
         mcts = MCTS(anet, world)
         move = 1
         x_train = []
@@ -111,17 +109,22 @@ class ReinforcementLearningAgent:
                 print("Saved network weights")
                 self.anet.save_params(ep, suffix=file_suffix)
 
-            n = min(n_parallel, cpu_count())
-            print(f"Running {n} games in parallel")
+            if n_parallel > 1:  # Parallel simulations
+                n = min(n_parallel, cpu_count())
+                print(f"Running {n} games in parallel")
 
-            weights = self.anet.get_weights()
+                weights = self.anet.get_weights()
 
-            params = [(weights, starting_player, rollout_chance)
-                      for _ in range(n)]
+                params = [(weights, starting_player, rollout_chance)
+                          for _ in range(n)]
 
-            with Pool(processes=n) as pool:
+                with Pool(processes=n) as pool:
 
-                result = pool.map(self.episode, params)
+                    result = pool.map(self.episode, params)
+            else:
+                print("Running on single thread")
+                params = (None, starting_player, rollout_chance)
+                result = [self.episode(params, self.anet)]
 
             for r in result:
                 if not x_train.size:
