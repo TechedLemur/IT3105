@@ -19,23 +19,31 @@ class ActorNet:
 
         input_layer = keras.Input(shape=input_shape, name="Input")
 
-        x = layers.Conv2D(32, 3, strides=1, padding='same',
-                          activation="relu")(input_layer)
-        x = layers.Conv2D(32, 3, strides=1, padding='same',
-                          activation="relu")(x)
+        x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
+        x = layers.BatchNormalization()(x)
+        x = keras.activations.relu(x)
+        x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+        x = layers.BatchNormalization()(x)
+        x = keras.activations.relu(x)
+        x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+        x = layers.BatchNormalization()(x)
+        x = keras.activations.relu(x)
 
-        # TODO: Add batch normalization and more layers
+        # TODO: Add more layers? Resnet?
 
-        y = layers.Conv2D(1, 1, strides=1, padding='same',
-                          activation='relu')(x)
+        y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
+        y = layers.BatchNormalization()(y)
+        y = keras.activations.relu(y)
         y = layers.Flatten()(y)
-
         policy_output_layer = layers.Dense(
             output_dim, activation=tf.nn.softmax, name="policy")(y)
 
-        z = layers.Conv2D(1, 1, strides=1, padding='same',
-                          activation='relu')(x)
+        z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
+        z = layers.BatchNormalization()(z)
+        z = keras.activations.relu(z)
         z = layers.Flatten()(z)
+        z = layers.Dense(50, activation='relu')(z)
+
         value_output_layer = layers.Dense(
             1, activation=tf.nn.tanh, name="value")(z)
 
@@ -167,7 +175,8 @@ class ActorNet:
     def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array):
         self.model.fit(
             x=x_train,
-            y={"policy": y_train, "value": y_train_value}
+            y={"policy": y_train, "value": y_train_value},
+            epochs=10
             # batch_size=cfg.mini_batch_size
         )
         self.update_epsilon()

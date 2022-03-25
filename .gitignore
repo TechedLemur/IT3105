@@ -133,3 +133,5 @@ dmypy.json
 .pyre/
 
 api_token.ini
+
+project2/data
