@@ -89,7 +89,7 @@ class ActorNet:
         if self.epsilon < 0.0001:
             self.epsilon = 0
 
-    def select_action(self, world: GameWorld, greedy=False) -> Action:
+    def select_action(self, world: State, greedy=False) -> Action:
         """
         Select an action based on the state.
         """
@@ -98,6 +98,11 @@ class ActorNet:
         # Rescale
 
         legal_actions = world.get_legal_actions()
+
+        h = self.winning_heuristic(world, legal_actions)
+
+        if h:
+            return h
 
         if random.random() < self.epsilon and not greedy:
             return random.choice(legal_actions)
@@ -140,6 +145,11 @@ class ActorNet:
         probs = prediction[0]
         value = prediction[1][0][0].numpy()
 
+        h = self.winning_heuristic(state, legal_actions)
+
+        if h:
+            return h, value
+
         if random.random() < self.epsilon and not greedy:
             action = random.choice(legal_actions)
             return action, value
@@ -164,6 +174,20 @@ class ActorNet:
         # if world.player == -1:
         # new_action = new_action.transposed()
         return action, value
+
+    @staticmethod
+    def winning_heuristic(state, legal_actions):
+        """
+        Check all child states, and if we have a winning state, choose it. 
+        """
+        winning = []
+        for a in legal_actions:
+            if state.do_action(a).is_final_state:
+                winning.append(a)
+
+        if winning:
+            return random.choice(winning)
+        return None
 
     def evaluate_state(self, state: State) -> float:
         # TODO: See if it makes sense to predict multiple states at the same time
