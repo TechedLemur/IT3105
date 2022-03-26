@@ -18,43 +18,38 @@ class ActorNet:
     def __init__(self, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
 
         input_layer = keras.Input(shape=input_shape, name="Input")
-
         x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
-        x = layers.BatchNormalization()(x)
         x = keras.activations.relu(x)
-        x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
         x = layers.BatchNormalization()(x)
-        x = keras.activations.relu(x)
-        x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
-        x = layers.BatchNormalization()(x)
-        x = keras.activations.relu(x)
+        # x = layers.Flatten()(x)
+        # x = layers.Dense(100)(x)
+        # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+        # x = keras.activations.relu(x)
+        # x = layers.BatchNormalization()(x)
+        # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+        # x = keras.activations.relu(x)
+        # x = layers.BatchNormalization()(x)
 
         # TODO: Add more layers? Resnet?
 
+        x = self.residual_block(x, filters=64)
+        x = self.residual_block(x, filters=64)
+
         y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        y = layers.BatchNormalization()(y)
         y = keras.activations.relu(y)
+        y = layers.BatchNormalization()(y)
         y = layers.Flatten()(y)
         policy_output_layer = layers.Dense(
             output_dim, activation=tf.nn.softmax, name="policy")(y)
 
         z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        z = layers.BatchNormalization()(z)
         z = keras.activations.relu(z)
+        z = layers.BatchNormalization()(z)
         z = layers.Flatten()(z)
         z = layers.Dense(50, activation='relu')(z)
 
         value_output_layer = layers.Dense(
             1, activation=tf.nn.tanh, name="value")(z)
-
-        # x = layers.Dense(100, activation="relu")(input_layer)
-
-        # x = layers.Dense(12, activation="relu")(x)
-
-        # policy_output_layer = layers.Dense(
-        #     output_dim, activation=tf.nn.softmax, name="policy")(x)
-        # value_output_layer = layers.Dense(
-        #     1, activation=tf.nn.tanh, name="value")(x)
 
         self.policy = keras.Model(
             input_layer, policy_output_layer, name="policy_model")
@@ -70,13 +65,30 @@ class ActorNet:
         }
         lossWeights = {"policy": 1.0, "value": 1.0}
         self.model.compile(
-            optimizer="adam",
+            optimizer=keras.optimizers.Adam(learning_rate=0.001),
             loss=losses,
             loss_weights=lossWeights,
             metrics=["accuracy"],
         )
 
         self.epsilon = cfg.epsilon
+
+    @staticmethod
+    def residual_block(x, filters: int, kernel_size=3):
+        y = layers.Conv2D(kernel_size=kernel_size,
+                          filters=filters, strides=1, padding='same')(x)
+        y = keras.activations.relu(y)
+        y = layers.BatchNormalization()(y)
+
+        y = layers.Conv2D(kernel_size=kernel_size,
+                          filters=filters, strides=1, padding='same')(x)
+
+        out = layers.Add()([y, x])
+
+        out = keras.activations.relu(out)
+        out = layers.BatchNormalization()(out)
+
+        return out
 
     def set_weights(self, weights):
         self.model.set_weights(weights)
@@ -89,7 +101,7 @@ class ActorNet:
         if self.epsilon < 0.0001:
             self.epsilon = 0
 
-    def select_action(self, world: State, greedy=False) -> Action:
+    def select_action(self, world: State, greedy=False, argmax=False) -> Action:
         """
         Select an action based on the state.
         """
@@ -109,7 +121,7 @@ class ActorNet:
         all_actions = world.get_all_actions()
 
         # Softmax output
-        probs = self.policy(np.array([world.as_vector()]))
+        probs = self.policy(np.array([world.as_vector()]))[0]
 
         mask = np.array(
             [a in legal_actions for a in all_actions]).astype(np.float32)
@@ -119,16 +131,20 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
-        probs = np.around(probs, 4)
+        probs = probs ** 3
 
-        # Rescale
         probs = probs / np.sum(probs)
 
-        s = np.sum(probs[0])
-        # Select an action based on the probability estimate
-        new_action = np.random.choice(all_actions, p=probs[0])
+        # Rescale
+        probs = np.around(probs, 4)
+        probs = probs / np.sum(probs)
 
-        # new_action = all_actions[new_action_index]
+        # Select an action based on the probability estimate
+        if argmax:
+            new_action_index = np.argmax(probs)
+            new_action = all_actions[new_action_index]
+        else:
+            new_action = np.random.choice(all_actions, p=probs)
 
         # if world.player == -1:
         # new_action = new_action.transposed()
@@ -200,8 +216,8 @@ class ActorNet:
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
-            epochs=epochs
-            # batch_size=cfg.mini_batch_size
+            epochs=epochs,
+            batch_size=1
         )
 
     def save_params(self, i, suffix=""):
