@@ -247,6 +247,13 @@ class HexState(State):
             array[:, :, 3] = self.player == 1
             return array
 
+    def to_array(self):
+        arr = np.zeros(self.k ** 2 + 1)
+        arr[0] = self.player
+        arr[1:] = self.board.flatten()
+
+        return arr
+
     def plot(self, labels: bool = False):
 
         cdict = {0: 'grey', 1: 'red', -1: 'blue'}
@@ -281,7 +288,10 @@ class HexState(State):
 
         clear_output(wait=True)
         plt.figure(figsize=(10, 10))
-        pos = nx.spring_layout(G, seed=8)
+        seed = 8
+        if k == 5:
+            seed = 10
+        pos = nx.spring_layout(G, seed=seed)
         nx.draw(G, pos=pos, node_color=colormap,
                 node_size=400, edge_color=edgemap)
         if labels:
