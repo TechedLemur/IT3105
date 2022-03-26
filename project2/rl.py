@@ -10,6 +10,7 @@ import numpy as np
 from collections import deque
 import timeit
 from multiprocessing import Pool, cpu_count
+from datetime import datetime
 
 
 class ReinforcementLearningAgent:
@@ -34,7 +35,7 @@ class ReinforcementLearningAgent:
         move = 1
         x_train = []
         y_train = []
-
+        states = []
         reward_factors = []
         all_actions = world.get_all_actions()
         while not world.is_final_state:
@@ -50,24 +51,29 @@ class ReinforcementLearningAgent:
             state = mcts.root.state
             D_matrix = D.reshape((state.k, state.k))
 
+            states.append(state.to_array())
             # Add training cases, and their symmetric versions
             x_train.append(state.as_vector())
             y_train.append(D)
             reward_factors.append(1)
 
-            x_train.append(state.inverted().as_vector())
+            inverted = state.inverted()
+            x_train.append(inverted.as_vector())
             y_train.append(D_matrix.T.flatten())
             reward_factors.append(-1)
+            states.append(inverted.to_array())
 
             rot, invRot = state.rotate180()
 
             x_train.append(rot.as_vector())
             y_train.append(np.rot90(D_matrix, 2).flatten())
             reward_factors.append(1)
+            states.append(rot.to_array())
 
             x_train.append(invRot.as_vector())
             y_train.append(np.rot90(D_matrix.T, 2).flatten())
             reward_factors.append(-1)
+            states.append(invRot.to_array())
 
             # Choose actual move (a*) based on D
             # Round to avoid floating point error
@@ -88,7 +94,7 @@ class ReinforcementLearningAgent:
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
-        return np.array(x_train), np.array(y_train), y_train_value, winner
+        return np.array(x_train), np.array(y_train), y_train_value, winner, np.array(states)
 
     def train(self, file_suffix="", n_parallel=8):
         wins = []
@@ -96,7 +102,7 @@ class ReinforcementLearningAgent:
         x_train = np.array([])
         y_train = np.array([])
         y_train_value = np.array([])
-
+        states = np.array([])
         i = 0
         save_params_interval = cfg.episodes // cfg.M
 
@@ -109,9 +115,18 @@ class ReinforcementLearningAgent:
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
 
-            if ep % save_params_interval == 0:
+            if ep % save_params_interval == 0 and ep > 0:
                 print("Saved network weights")
                 self.anet.save_params(ep, suffix=file_suffix)
+
+                timestamp = datetime.now().isoformat()[:19]
+                # Save data for possible later training
+                timestamp = timestamp.replace(":", "-")
+                with open(f'project2/data/{timestamp}_ep_{ep}.npy', 'wb') as f:
+                    np.save(f, states)
+                    np.save(f, y_train)
+                    np.save(f, y_train_value)
+                print("Saved data")
 
             if n > 1:  # Parallel simulations
                 print(f"Running {n} games in parallel")
@@ -131,15 +146,18 @@ class ReinforcementLearningAgent:
                 result = [self.episode(params, self.anet)]
 
             for r in result:
+
                 if not x_train.size:
                     x_train = r[0]
                     y_train = r[1]
                     y_train_value = r[2]
+                    states = r[4]
                 else:
                     x_train = np.concatenate((x_train, r[0]))
                     y_train = np.concatenate((y_train, r[1]))
                     y_train_value = np.concatenate((y_train_value, r[2]))
-                wins.append(r[3])
+                    states = np.concatenate((states, r[4]))
+                wins.append(starting_player == r[3])
 
             # mini_batch = np.random.choice(
             #     min(cfg.replay_buffer_size, i),
@@ -156,11 +174,12 @@ class ReinforcementLearningAgent:
 
             self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n
-        wins = np.array(wins)
+        wins = np.array(wins).astype(np.float32)
         self.anet.save_params(ep, suffix=file_suffix)
         print(
-            f"Player 1 won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
+            f"First player won {100*np.count_nonzero(wins[wins == 1])/wins.shape[0]:.2f}% of the games!"
         )
         self.x_train = x_train
         self.y_train = y_train
         self.y_train_value = y_train_value
+        self.states = states

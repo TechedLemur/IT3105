@@ -1,4 +1,3 @@
-from os import times
 from rl import ReinforcementLearningAgent
 from config import Config
 from datetime import datetime
@@ -10,7 +9,7 @@ suffix = f"{Config.k}x{Config.k}"
 if __name__ == '__main__':
     rlAgent = ReinforcementLearningAgent()
 
-    rlAgent.train(file_suffix=suffix, n_parallel=10)
+    rlAgent.train(file_suffix=suffix, n_parallel=1)
 
     print(f"Saving {len(rlAgent.x_train)} cases")
 
@@ -19,6 +18,6 @@ if __name__ == '__main__':
     # Save data for possible later training
     timestamp = timestamp.replace(":", "-")
     with open(f'project2/data/{timestamp}_{suffix}.npy', 'wb') as f:
-        np.save(f, rlAgent.x_train)
+        np.save(f, rlAgent.states)
         np.save(f, rlAgent.y_train)
         np.save(f, rlAgent.y_train_value)
