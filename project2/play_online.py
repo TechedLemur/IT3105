@@ -1,8 +1,7 @@
 import configparser
-from lib2to3.pgen2.token import tok_name
 from ActorClient import ActorClient
 from actor_net import ActorNet
-
+from gameworlds.hex_world import HexState
 # actor = ActorNet()
 
 config = configparser.ConfigParser()
@@ -12,16 +11,21 @@ token = config['DEFAULT']['Token']
 
 # Import and override the `handle_get_action` hook in ActorClient
 
+actor = ActorNet()
+# TODO: Load params
+
 
 class MyClient(ActorClient):
+    # pass
+    def handle_get_action(self, state):
+        state = HexState.from_array(state)
+        a = actor.select_action(state, greedy=True)  # Your logic
+        row = a.row
+        col = a.col
+        return row, col
 
-    pass
-    # def handle_get_action(self, state):
-    #     row, col = actor.get_action(state) # Your logic
-    #     return row, col
 
-
-# Initialize and run your overridden client when the script is executed
+    # Initialize and run your overridden client when the script is executed
 if __name__ == '__main__':
 
     client = MyClient(auth=token)

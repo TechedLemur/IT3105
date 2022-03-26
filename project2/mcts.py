@@ -158,7 +158,6 @@ class MCTS:
                     current_node = current_node.children[action]
 
             game_finished = new_state.is_final_state
-            legal = new_state.get_legal_actions()
 
             player = -player
             it += 1

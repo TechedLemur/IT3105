@@ -14,12 +14,11 @@ if __name__ == '__main__':
 
     print(f"Saving {len(rlAgent.x_train)} cases")
 
-    # Save data for possible later training
-
-    timestamp = datetime.now().isoformat()[:19]
     # Because Windows cannot have : in filename ._.
+    timestamp = datetime.now().isoformat()[:19]
+    # Save data for possible later training
     timestamp = timestamp.replace(":", "-")
-    with open(f'data/{timestamp}_{suffix}.npy', 'wb') as f:
+    with open(f'project2/data/{timestamp}_{suffix}.npy', 'wb') as f:
         np.save(f, rlAgent.x_train)
         np.save(f, rlAgent.y_train)
         np.save(f, rlAgent.y_train_value)

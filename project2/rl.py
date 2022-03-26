@@ -22,11 +22,13 @@ class ReinforcementLearningAgent:
         anet_weigths = params[0]
         starting_player = params[1]
         rollout_chance = params[2]
+        epsilon = params[3]
 
         world = HexState.empty_board(starting_player=starting_player)
         if not anet:
             anet = ActorNet(cfg.input_shape, cfg.output_length)
             anet.set_weights(anet_weigths)
+            anet.epsilon = epsilon
 
         mcts = MCTS(anet, world)
         move = 1
@@ -102,6 +104,8 @@ class ReinforcementLearningAgent:
 
         starting_player = 1
 
+        n = min(n_parallel, cpu_count())
+
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
 
@@ -109,13 +113,13 @@ class ReinforcementLearningAgent:
                 print("Saved network weights")
                 self.anet.save_params(ep, suffix=file_suffix)
 
-            if n_parallel > 1:  # Parallel simulations
-                n = min(n_parallel, cpu_count())
+            if n > 1:  # Parallel simulations
                 print(f"Running {n} games in parallel")
 
                 weights = self.anet.get_weights()
+                epsilon = self.anet.epsilon
 
-                params = [(weights, starting_player, rollout_chance)
+                params = [(weights, starting_player, rollout_chance, epsilon)
                           for _ in range(n)]
 
                 with Pool(processes=n) as pool:
@@ -123,7 +127,7 @@ class ReinforcementLearningAgent:
                     result = pool.map(self.episode, params)
             else:
                 print("Running on single thread")
-                params = (None, starting_player, rollout_chance)
+                params = (None, starting_player, rollout_chance, None)
                 result = [self.episode(params, self.anet)]
 
             for r in result:
@@ -149,6 +153,9 @@ class ReinforcementLearningAgent:
                             y_train_value=y_train_value)
             # self.anet.train(x_train[mini_batch], y_train[mini_batch],
             #                 y_train_value=y_train_value[mini_batch])
+
+            self.anet.update_epsilon(n=n)
+            rollout_chance *= cfg.rollout_decay ** n
         wins = np.array(wins)
         self.anet.save_params(ep, suffix=file_suffix)
         print(
