@@ -84,8 +84,8 @@ class ActorNet:
     def get_weights(self):
         return self.model.get_weights()
 
-    def update_epsilon(self):
-        self.epsilon *= cfg.epsilon_decay
+    def update_epsilon(self, n=1):
+        self.epsilon *= cfg.epsilon_decay ** n
         if self.epsilon < 0.0001:
             self.epsilon = 0
 
@@ -93,9 +93,6 @@ class ActorNet:
         """
         Select an action based on the state.
         """
-
-        # Softmax output
-        # Rescale
 
         legal_actions = world.get_legal_actions()
 
@@ -107,9 +104,11 @@ class ActorNet:
         if random.random() < self.epsilon and not greedy:
             return random.choice(legal_actions)
 
+        # A list with all possible actions in the game (legal and not)
+
         all_actions = world.get_all_actions()
 
-        # A list with all possible actions in the game (legal and not)
+        # Softmax output
         probs = self.policy(np.array([world.as_vector()]))
 
         mask = np.array(
@@ -122,6 +121,7 @@ class ActorNet:
 
         probs = np.around(probs, 4)
 
+        # Rescale
         probs = probs / np.sum(probs)
 
         s = np.sum(probs[0])
@@ -196,14 +196,13 @@ class ActorNet:
 
         return v[0][0].numpy()
 
-    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array):
+    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
-            epochs=10
+            epochs=epochs
             # batch_size=cfg.mini_batch_size
         )
-        self.update_epsilon()
 
     def save_params(self, i, suffix=""):
         self.model.save_weights(f"models/model{i}{suffix}")
