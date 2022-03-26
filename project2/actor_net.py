@@ -1,3 +1,5 @@
+from pickletools import optimize
+from statistics import mode
 from gameworlds.gameworld import State, Action, GameWorld
 from typing import List, Tuple
 import tensorflow as tf
@@ -15,7 +17,21 @@ class ActorNet:
     Neural network actor
     """
 
-    def __init__(self, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
+    def __init__(self, input_shape=cfg.input_shape, output_dim=cfg.output_length, benchmark=False) -> None:
+        self.benchmark = benchmark
+        self.epsilon = cfg.epsilon
+
+        if benchmark:
+            model = keras.models.Sequential()
+            model.add(layers.Dense(50, activation='relu', input_shape=(50,),
+                      kernel_initializer=keras.initializers.Ones()))
+            model.add(layers.Dense(45, activation='relu'))
+            model.add(layers.Dense(49, activation='softmax'))
+            model.compile(optimizer='adam', loss='categorical_crossentropy')
+            model.load_weights("models/benchmark/best_weights")
+            self.policy = model
+
+            return
 
         input_layer = keras.Input(shape=input_shape, name="Input")
 
@@ -76,26 +92,25 @@ class ActorNet:
             metrics=["accuracy"],
         )
 
-        self.epsilon = cfg.epsilon
-
     def set_weights(self, weights):
         self.model.set_weights(weights)
 
     def get_weights(self):
         return self.model.get_weights()
 
-    def update_epsilon(self):
-        self.epsilon *= cfg.epsilon_decay
+    def update_epsilon(self, n=1):
+        self.epsilon *= cfg.epsilon_decay ** n
         if self.epsilon < 0.0001:
             self.epsilon = 0
 
-    def select_action(self, world: State, greedy=False) -> Action:
+    def select_action(self, world: State, greedy=False, argmax=False) -> Action:
         """
         Select an action based on the state.
         """
 
         # Softmax output
         # Rescale
+        factor = 2
 
         legal_actions = world.get_legal_actions()
 
@@ -107,10 +122,14 @@ class ActorNet:
         if random.random() < self.epsilon and not greedy:
             return random.choice(legal_actions)
 
+        # A list with all possible actions in the game (legal and not)
         all_actions = world.get_all_actions()
 
-        # A list with all possible actions in the game (legal and not)
-        probs = self.policy(np.array([world.as_vector()]))
+        if self.benchmark:
+            mode = 2
+        else:
+            mode = 1
+        probs = self.policy(np.array([world.as_vector(mode=mode)]))
 
         mask = np.array(
             [a in legal_actions for a in all_actions]).astype(np.float32)
@@ -120,15 +139,19 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
-        probs = np.around(probs, 4)
+        probs = probs ** factor  # Enhance difference between probabilities
 
         probs = probs / np.sum(probs)
 
-        s = np.sum(probs[0])
-        # Select an action based on the probability estimate
-        new_action = np.random.choice(all_actions, p=probs[0])
+        probs = np.around(probs, 5)  # Avoid floating point errors
+        probs = probs / np.sum(probs)
 
-        # new_action = all_actions[new_action_index]
+        if argmax:
+            new_action_index = np.argmax(probs)
+            new_action = all_actions[new_action_index]
+        else:
+            # Select an action based on the probability estimate
+            new_action = np.random.choice(all_actions, p=probs[0])
 
         # if world.player == -1:
         # new_action = new_action.transposed()
@@ -196,14 +219,14 @@ class ActorNet:
 
         return v[0][0].numpy()
 
-    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array):
+    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=1):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
-            epochs=10
+            epochs=epochs
             # batch_size=cfg.mini_batch_size
         )
-        self.update_epsilon()
+        # self.update_epsilon()
 
     def save_params(self, i, suffix=""):
         self.model.save_weights(f"models/model{i}{suffix}")

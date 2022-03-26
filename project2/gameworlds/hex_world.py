@@ -247,6 +247,20 @@ class HexState(State):
             array[:, :, 3] = self.player == 1
             return array
 
+        if mode == 2:
+            if self.player == 1:
+                vector = [2]
+            else:
+                vector = [1]
+
+            for i in self.board.flatten():
+                if i == 1:
+                    vector.append(2)
+                else:
+                    vector.append(1)
+
+            return np.array(vector)
+
     def plot(self, labels: bool = False):
 
         cdict = {0: 'grey', 1: 'red', -1: 'blue'}

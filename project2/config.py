@@ -4,21 +4,21 @@ class Config:
     """
 
     # The size (k) of the k x k Hex board, where 3 ≤ k ≤ 10.
-    k = 3
+    k = 7
 
     mini_batch_size = 500
     replay_buffer_size = 1000
 
     # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
-    episodes = 10
-    search_games = 300
+    episodes = 5
+    search_games = 500
     c = 1.0
     random_rollout_move_p = 0.1
 
     rollout_chance = 0.6  # Chance to use rollout and not critic
     rollout_decay = 0.9
 
-    reward_decay = 0.4  # Decay reward of early moves
+    reward_decay = 0.9  # Decay reward of early moves
 
     # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
     # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
