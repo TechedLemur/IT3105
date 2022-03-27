@@ -1,5 +1,4 @@
 from copy import copy
-from distutils.command.config import config
 from sklearn import neighbors
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
@@ -57,68 +56,40 @@ def generate_neighbors(K=Config.k) -> dict:
 neighbors = generate_neighbors()
 
 
-def generate_bridge_dict(K=config.k):
+def generate_bridge_dict(K=Config.k):
     """
     Generate a dictionary mapping each cell to their possible bridge carrier and endpoints
     Format [(carrier1, carrier2, endpoind1), (carrier3, carrier4, endpoind2)...]
     """
 
-    down_right = ((row, col+1), (row+1, col), (row+1, col+1))
-    down_left = ((row+1, col-1), (row + 1, col), (row+2, col-1))
-
-    up_right
-
     bridges = {}
+
     for row in range(K):
         for col in range(K):
 
-            if row == 0:  # Top row
-                if col == 0:  # Top left corner
-                    bridges[(row, col)] = [
-                        ((row, col+1), (row+1, col), (row+1, col+1))]
-                elif col == K-1:  # Top right corner
-                    bridges[(row, col)] = [
-                        ((row+1, col-1), (row + 1, col), (row+2, col-1))]
-                else:
-                    bridges[(row, col)] = [((row, col+1), (row+1, col), (row+1, col+1)),
-                                           ((row+1, col-1), (row + 1, col), (row+2, col-1))]
-            elif row == K-1:  # Bottom row
-                if col == 0:  # Bottom left corner
-                    bridges[(row, col)] = [
-                        ((row-1, col+1), (row - 1, col), (row - 2, col+1))]
-                elif col == K-1:  # Bottom right corner
-                    bridges[(row, col)] = [
-                        ((row, col-1), (row - 1, col), (row - 1, col-1))]
+            up = ((row-1, col), (row, col-1), (row-1, col-1))
 
-                else:  # Middle pieces
-                    bridges[(row, col)] = [((row-1, col+1), (row - 1, col), (row - 2,
-                                                                             col+1)), ((row, col-1), (row - 1, col), (row - 1, col-1))]
+            up_right = ((row+1, col-1), (row, col-1), (row+1, col-2))
+            down_right = ((row+1, col-1), (row+1, col), (row+2, col-1))
 
-            else:  # Middle rows
+            down = ((row+1, col), (row, col+1), (row+1, col+1))
 
-                if col == 0:  # Left column
-                    if row == 1:
-                        bridges[(row, col)] = [
-                            ((row, col+1),  (row + 1, col), (row + 1, col+1))]
-                    else:
-                        bridges[(row, col)] = [((row, col+1),  (row + 1, col), (row + 1,
-                                                                                col+1)), ((row-1, col+1),  (row - 1, col), (row - 2, col+1))]
+            down_left = ((row, col+1), (row - 1, col+1), (row-1, col+2))
+            up_left = ((row-1, col+1), (row - 1, col), (row-2, col+1))
 
-                elif col == K-1:  # Right column
-                    if row == K-2:
-                        bridges[(row, col)] = [
-                            ((row, col-1), (row - 1, col), (row - 1, col-1))]
+            patterns = [up, up_right, up_left, down, down_left, down_right]
 
-                    else:
-                        bridges[(row, col)] = [((row, col-1), (row - 1, col), (row - 1,
-                                                                               col-1)), ((row+1, col-1), (row + 1, col), (row+2, col-1))]
+            b = []
+            for pattern in patterns:
+                bridge_endpoint = pattern[2]
+                if bridge_endpoint[0] >= 0 and bridge_endpoint[1] >= 0 and bridge_endpoint[0] < K and bridge_endpoint[1] < K:
+                    b.append(pattern)
 
-                # TODO: Fix middle of the board. Special cases when in row/col 1 and K-2
-
-                else:  # Middle pieces
-                    bridges[(row, col)] = [(row, col-1), (row+1, col-1),
-                                           (row + 1, col), (row - 1, col), (row, col+1), (row-1, col+1)]
+            bridges[(row, col)] = b
     return bridges
+
+
+bridges = generate_bridge_dict()
 
 
 def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray = None) -> bool:
@@ -310,6 +281,75 @@ class HexState(State):
             array[:, :, 1] = self.board < 0
             array[:, :, 2] = self.board == 0
             array[:, :, 3] = self.player == 1
+            return array
+
+        if mode == 2:  # gao-2017 encoding
+
+            array = np.zeros((self.k+4, self.k+4, 9))
+            p = self.player
+            b_copy = self.board.copy()
+
+            b = np.pad(b_copy, 2, mode='constant', constant_values=(-1))
+
+            b[0:2] = 1
+            b[-2:] = 1
+
+            array[:, :, 0] = b > 0
+            array[:, :, 1] = b < 0
+            array[:, :, 2] = b == 0
+            array[:, :, 3] = p == 1
+            array[:, :, 4] = p != 1
+
+            # Bridges:
+
+            player1_endpoint = np.zeros(b_copy.shape)
+            player2_endpoint = np.zeros(b_copy.shape)
+            save_bridge = np.zeros(b_copy.shape)
+            form_bridge = np.zeros(b_copy.shape)
+
+            for i in range(self.k):
+                for j in range(self.k):
+                    for pattern in bridges[(i, j)]:
+                        carrier1 = pattern[0]
+                        carrier2 = pattern[1]
+                        endpoint = pattern[2]
+                        # Bridge endpoint
+                        if b_copy[carrier1] == 0 or b_copy[carrier2] == 0:
+
+                            if b_copy[carrier1] != 1 and b_copy[carrier2] != 1:
+                                if b_copy[i, j] == 1:
+                                    # Player 1 bridge endpoint
+                                    player1_endpoint[i, j] = max(
+                                        player1_endpoint[i, j], b_copy[endpoint] >= 0)
+                            elif b_copy[carrier1] != -1 and b_copy[carrier2] != -1:
+                                if b_copy[i, j] == -1:
+                                    # player 2 bridge endpoint
+                                    player2_endpoint[i, j] = max(player2_endpoint[i, j],
+                                                                 b_copy[endpoint] <= 0)
+                        if b_copy[i, j] == p:
+                            if b_copy[carrier1] == 0 and b_copy[carrier2] == 0:
+                                # Form bridge
+                                form_bridge[endpoint] = max(
+                                    form_bridge[endpoint], b_copy[endpoint] == 0)
+
+                            # Save bridge
+
+                            if b_copy[carrier1] != 0 and b_copy[carrier2] == 0:
+                                if b_copy[carrier1] != p:
+                                    save_bridge[carrier2] = max(
+                                        save_bridge[carrier2], b_copy[endpoint] == p)
+                            if b_copy[carrier1] == 0 and b_copy[carrier2] != 0:
+                                if b_copy[carrier2] != p:
+                                    save_bridge[carrier1] = max(
+                                        save_bridge[carrier1], b_copy[endpoint] == p)
+
+            # player 1 bridge endpoints
+            array[:, :, 5] = np.pad(player1_endpoint, 2)
+            # player 2 bridge endpoints
+            array[:, :, 6] = np.pad(player2_endpoint, 2)
+            array[:, :, 7] = np.pad(form_bridge, 2)  # toplay form bridge
+            array[:, :, 8] = np.pad(save_bridge, 2)  # toplay save bridge
+
             return array
 
     def to_array(self):
