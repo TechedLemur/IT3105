@@ -9,6 +9,8 @@ import shutil
 
 if __name__ == "__main__":
 
+    print("Starting training")
+
     suffix = f"{cfg.k}x{cfg.k}"
     timestamp = datetime.now().isoformat()[:19]
     # Save data for possible later training
