@@ -300,7 +300,7 @@ class HexState(State):
             ),
         )
 
-    def as_vector(self, mode=1):
+    def as_vector(self, mode=2):
         """
         Returns the game state as a vector intended to use as input for the ANET.
 

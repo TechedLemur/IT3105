@@ -28,7 +28,7 @@ class ReinforcementLearningAgent:
 
         world = HexState.empty_board(starting_player=starting_player)
         if not anet and (cfg.random_rollout_move_p + rollout_chance) < 2:
-            anet = ActorNet(cfg.input_shape, cfg.output_length)
+            anet = ActorNet()
             anet.set_weights(anet_weigths)
             anet.epsilon = epsilon
 
@@ -119,11 +119,14 @@ class ReinforcementLearningAgent:
 
         n = min(n_parallel, cpu_count())
 
+        print(
+            f"Running {cfg.episodes} episodes with {cfg.search_games} search games")
+
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
             print(save_params_interval)
 
-            if ep % save_params_interval == 0 and ep > 0:
+            if ep % save_params_interval == 0:
                 print("Saved network weights")
                 self.anet.save_params(ep, suffix=file_suffix)
 
@@ -169,27 +172,17 @@ class ReinforcementLearningAgent:
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
 
-            # mini_batch = np.random.choice(
-            #     min(cfg.replay_buffer_size, i),
-            #     min(cfg.mini_batch_size, i),
-            #     replace=False,
-            # )
-            # print()
-            # print(x_train[mini_batch])
-            # print(y_train[mini_batch])
-
             for _ in range(n):
                 # Select half the replay buffer randomly
                 ind = np.random.choice(
                     np.arange(len(x_train)), len(x_train)//2, replace=False)
 
                 self.anet.train(x_train[ind], y_train[ind],
-                                y_train_value=y_train_value[ind], epochs=2)
-            # self.anet.train(x_train[mini_batch], y_train[mini_batch],
-            #                 y_train_value=y_train_value[mini_batch])
+                                y_train_value=y_train_value[ind], epochs=3)
 
             self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n
+            starting_player *= -1
         wins = np.array(wins).astype(np.float32)
         self.anet.save_params(ep, suffix=file_suffix)
         print(

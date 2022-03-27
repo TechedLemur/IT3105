@@ -11,6 +11,7 @@
     "reward_decay": 0.4,
     "input_planes": 4,
     "layers": [],
+    "padding" : 2,
     "activations": [],
     "learning_rate": 0.001,
     "epsilon": 0.3,

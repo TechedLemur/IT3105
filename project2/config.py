@@ -1,6 +1,7 @@
 import json
 import sys
 
+
 class Config:
     def __init__(self, config_name):
         with open(f"configs/{config_name}") as f:
@@ -18,15 +19,16 @@ class Config:
         self.c = c["c"]
         self.random_rollout_move_p = c["random_rollout_move_p"]
 
-        self.rollout_chance = c["rollout_chance"]  # Chance to use rollout and not critic
+        # Chance to use rollout and not critic
+        self.rollout_chance = c["rollout_chance"]
         self.rollout_decay = c["rollout_decay"]
         self.reward_decay = c["reward_decay"]  # Decay reward of early moves
 
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
-
-        self.input_shape = (self.k, self.k, c["input_planes"])
-        # input_length = k*k*4
+        self.padding = c["padding"]
+        self.input_shape = (self.k+2*self.padding, self.k +
+                            2*self.padding, c["input_planes"])
         self.output_length = self.k * self.k
         self.layers = []
         self.activations = []
@@ -49,6 +51,7 @@ class Config:
         self.K = 5
         self.N = 5
 
+
 if sys.argv[1][::-4] == "json":
     cfg_file = sys.argv[1]
 else:
@@ -56,4 +59,3 @@ else:
 
 print("Config file: ", cfg_file)
 cfg = Config(cfg_file)
-

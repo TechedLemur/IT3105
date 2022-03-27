@@ -17,12 +17,16 @@ class ActorNet:
     """
 
     def __init__(
-        self, path: str, input_shape=cfg.input_shape, output_dim=cfg.output_length
+        self, path: str = ".", input_shape=cfg.input_shape, output_dim=cfg.output_length
     ) -> None:
 
         self.path = path
         input_layer = keras.Input(shape=input_shape, name="Input")
-        x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
+        if cfg.padding:
+            x = layers.Conv2D(64, kernel_size=(3+cfg.padding), strides=1,
+                              padding='valid')(input_layer)
+        else:
+            x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
         x = LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         # x = layers.Flatten()(x)
@@ -73,7 +77,7 @@ class ActorNet:
         }
         lossWeights = {"policy": 1.0, "value": 1.0}
         self.model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            optimizer=keras.optimizers.Adam(learning_rate=cfg.learning_rate),
             loss=losses,
             loss_weights=lossWeights,
             metrics=["accuracy"],
@@ -140,7 +144,7 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
-        probs = probs ** 3
+        probs = probs ** 5
 
         probs = probs / np.sum(probs)
 
