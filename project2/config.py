@@ -52,7 +52,7 @@ class Config:
         self.N = 5
 
 
-if sys.argv[1][::-4] == "json":
+if sys.argv[1][-3:] == "json":
     cfg_file = sys.argv[1]
 else:
     cfg_file = "base.json"
