@@ -14,8 +14,9 @@ from datetime import datetime
 
 
 class ReinforcementLearningAgent:
-    def __init__(self):
-        self.anet = ActorNet(cfg.input_shape, cfg.output_length)
+    def __init__(self, path: str):
+        self.anet = ActorNet(path, cfg.input_shape, cfg.output_length)
+        self.path = path
 
     @staticmethod
     def episode(params, anet=None):
@@ -47,7 +48,7 @@ class ReinforcementLearningAgent:
 
             # print("D: ", D)
             # Decay rewards after each move
-            reward_factors = [x*cfg.reward_decay for x in reward_factors]
+            reward_factors = [x * cfg.reward_decay for x in reward_factors]
             state = mcts.root.state
             D_matrix = D.reshape((state.k, state.k))
 
@@ -94,7 +95,13 @@ class ReinforcementLearningAgent:
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
-        return np.array(x_train), np.array(y_train), y_train_value, winner, np.array(states)
+        return (
+            np.array(x_train),
+            np.array(y_train),
+            y_train_value,
+            winner,
+            np.array(states),
+        )
 
     def train(self, file_suffix="", n_parallel=8):
         wins = []
@@ -122,7 +129,7 @@ class ReinforcementLearningAgent:
                 timestamp = datetime.now().isoformat()[:19]
                 # Save data for possible later training
                 timestamp = timestamp.replace(":", "-")
-                with open(f'project2/data/{timestamp}_ep_{ep}.npy', 'wb') as f:
+                with open(f"{self.path}/dataset/{timestamp}_ep_{ep}.npy", "wb") as f:
                     np.save(f, states)
                     np.save(f, y_train)
                     np.save(f, y_train_value)
@@ -134,8 +141,10 @@ class ReinforcementLearningAgent:
                 weights = self.anet.get_weights()
                 epsilon = self.anet.epsilon
 
-                params = [(weights, starting_player, rollout_chance, epsilon)
-                          for _ in range(n)]
+                params = [
+                    (weights, starting_player, rollout_chance, epsilon)
+                    for _ in range(n)
+                ]
 
                 with Pool(processes=n) as pool:
 
@@ -167,8 +176,7 @@ class ReinforcementLearningAgent:
             # print()
             # print(x_train[mini_batch])
             # print(y_train[mini_batch])
-            self.anet.train(x_train, y_train,
-                            y_train_value=y_train_value)
+            self.anet.train(x_train, y_train, y_train_value=y_train_value)
             # self.anet.train(x_train[mini_batch], y_train[mini_batch],
             #                 y_train_value=y_train_value[mini_batch])
 

@@ -15,8 +15,9 @@ class ActorNet:
     Neural network actor
     """
 
-    def __init__(self, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
+    def __init__(self, path: str, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
 
+        self.path = path
         input_layer = keras.Input(shape=input_shape, name="Input")
         x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
         x = keras.activations.relu(x)
@@ -194,7 +195,7 @@ class ActorNet:
     @staticmethod
     def winning_heuristic(state, legal_actions):
         """
-        Check all child states, and if we have a winning state, choose it. 
+        Check all child states, and if we have a winning state, choose it.
         """
         winning = []
         for a in legal_actions:
@@ -221,7 +222,7 @@ class ActorNet:
         )
 
     def save_params(self, i, suffix=""):
-        self.model.save_weights(f"models/model{i}{suffix}")
+        self.model.save_weights(f"{self.path}/models/model{i}{suffix}")
 
     def load_params(self, i, suffix=""):
-        self.model.load_weights(f"models/model{i}{suffix}")
+        self.model.load_weights(f"{self.path}/models/model{i}{suffix}")
