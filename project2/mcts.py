@@ -193,8 +193,8 @@ class MCTS:
             max_indices = np.flatnonzero(
                 action_values == np.min(action_values))
 
-        if not max_indices.any():
-            return random.choice(list(node.children.keys()))
+        # if not max_indices.any():
+            # return random.choice(list(node.children.keys()))
 
         # Choose randomly between the best choices (if they have equal values)
         return list(node.children.keys())[np.random.choice(max_indices)]

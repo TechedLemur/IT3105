@@ -218,7 +218,6 @@ class ActorNet:
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
             epochs=epochs,
-            batch_size=1
         )
 
     def save_params(self, i, suffix=""):
