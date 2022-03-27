@@ -1,4 +1,5 @@
 from copy import copy
+from distutils.command.config import config
 from sklearn import neighbors
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
@@ -54,6 +55,70 @@ def generate_neighbors(K=Config.k) -> dict:
 
 
 neighbors = generate_neighbors()
+
+
+def generate_bridge_dict(K=config.k):
+    """
+    Generate a dictionary mapping each cell to their possible bridge carrier and endpoints
+    Format [(carrier1, carrier2, endpoind1), (carrier3, carrier4, endpoind2)...]
+    """
+
+    down_right = ((row, col+1), (row+1, col), (row+1, col+1))
+    down_left = ((row+1, col-1), (row + 1, col), (row+2, col-1))
+
+    up_right
+
+    bridges = {}
+    for row in range(K):
+        for col in range(K):
+
+            if row == 0:  # Top row
+                if col == 0:  # Top left corner
+                    bridges[(row, col)] = [
+                        ((row, col+1), (row+1, col), (row+1, col+1))]
+                elif col == K-1:  # Top right corner
+                    bridges[(row, col)] = [
+                        ((row+1, col-1), (row + 1, col), (row+2, col-1))]
+                else:
+                    bridges[(row, col)] = [((row, col+1), (row+1, col), (row+1, col+1)),
+                                           ((row+1, col-1), (row + 1, col), (row+2, col-1))]
+            elif row == K-1:  # Bottom row
+                if col == 0:  # Bottom left corner
+                    bridges[(row, col)] = [
+                        ((row-1, col+1), (row - 1, col), (row - 2, col+1))]
+                elif col == K-1:  # Bottom right corner
+                    bridges[(row, col)] = [
+                        ((row, col-1), (row - 1, col), (row - 1, col-1))]
+
+                else:  # Middle pieces
+                    bridges[(row, col)] = [((row-1, col+1), (row - 1, col), (row - 2,
+                                                                             col+1)), ((row, col-1), (row - 1, col), (row - 1, col-1))]
+
+            else:  # Middle rows
+
+                if col == 0:  # Left column
+                    if row == 1:
+                        bridges[(row, col)] = [
+                            ((row, col+1),  (row + 1, col), (row + 1, col+1))]
+                    else:
+                        bridges[(row, col)] = [((row, col+1),  (row + 1, col), (row + 1,
+                                                                                col+1)), ((row-1, col+1),  (row - 1, col), (row - 2, col+1))]
+
+                elif col == K-1:  # Right column
+                    if row == K-2:
+                        bridges[(row, col)] = [
+                            ((row, col-1), (row - 1, col), (row - 1, col-1))]
+
+                    else:
+                        bridges[(row, col)] = [((row, col-1), (row - 1, col), (row - 1,
+                                                                               col-1)), ((row+1, col-1), (row + 1, col), (row+2, col-1))]
+
+                # TODO: Fix middle of the board. Special cases when in row/col 1 and K-2
+
+                else:  # Middle pieces
+                    bridges[(row, col)] = [(row, col-1), (row+1, col-1),
+                                           (row + 1, col), (row - 1, col), (row, col+1), (row-1, col+1)]
+    return bridges
 
 
 def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray = None) -> bool:
