@@ -1,5 +1,5 @@
 from rl import ReinforcementLearningAgent
-from config import cfg
+from config import cfg, cfg_file
 from datetime import datetime
 import numpy as np
 import os
@@ -33,5 +33,4 @@ if __name__ == "__main__":
         np.save(f, rlAgent.y_train)
         np.save(f, rlAgent.y_train_value)
 
-    config_file = sys.argv[1]
-    shutil.copyfile(f"./configs/{config_file}", f"{path}/{config_file}")
+    shutil.copyfile(f"./configs/{cfg_file}", f"{path}/{cfg_file}")
