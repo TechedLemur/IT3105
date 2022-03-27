@@ -1,5 +1,5 @@
 {
-    "k": 3,
+    "k": 7,
     "mini_batch_size": 500,
     "replay_buffer_size": 1000,
     "episodes": 10,
@@ -9,7 +9,7 @@
     "rollout_chance": 0.6,
     "rollout_decay": 0.9,
     "reward_decay": 0.4,
-    "input_planes": 4,
+    "input_planes": 9,
     "layers": [],
     "padding" : 2,
     "activations": [],
