@@ -27,8 +27,11 @@ class Config:
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
         self.padding = c["padding"]
-        self.input_shape = (self.k+2*self.padding, self.k +
-                            2*self.padding, c["input_planes"])
+        self.input_shape = (
+            self.k + 2 * self.padding,
+            self.k + 2 * self.padding,
+            c["input_planes"],
+        )
         self.output_length = self.k * self.k
         self.layers = []
         self.activations = []
@@ -52,9 +55,7 @@ class Config:
         self.N = 5
 
 
-print("sys.argv[1]: ", sys.argv[1])
-print("sys.argv[1]: ", sys.argv[1][-3:])
-if sys.argv[1][-3:] == "json":
+if sys.argv[1][-4:] == "json":
     cfg_file = sys.argv[1]
 else:
     cfg_file = "base.json"
