@@ -3,4 +3,4 @@ RUN pip3 install graphviz sklearn networkx matplotlib ipython
 COPY . /project2/
 WORKDIR /project2
 RUN mkdir -p data
-ENTRYPOINT [ "python3", "training.py", "/project2"]
+ENTRYPOINT [ "python3", "training.py"]

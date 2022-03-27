@@ -1,21 +1,20 @@
 from rl import ReinforcementLearningAgent
-from config import Config
+from config import cfg
 from datetime import datetime
 import numpy as np
 import os
 import sys
 
 
-
 if __name__ == "__main__":
 
-    suffix = f"{Config.k}x{Config.k}"
+    suffix = f"{cfg.k}x{cfg.k}"
     timestamp = datetime.now().isoformat()[:19]
     # Save data for possible later training
     timestamp = timestamp.replace(":", "-")
 
-    if len(sys.argv) > 1:
-        path = f"{sys.argv[1]}/data/{timestamp}_{suffix}"
+    if len(sys.argv) > 2:
+        path = f"{sys.argv[2]}/data/{timestamp}_{suffix}"
     else:
         path = f"data/{timestamp}_{suffix}"
 

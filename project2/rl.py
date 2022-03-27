@@ -4,7 +4,7 @@ from actor_net import ActorNet
 from mcts import MCTS
 from gameworlds.nim_world import NimWorld
 from gameworlds.hex_world import HexState
-from config import Config as cfg
+from config import cfg
 from gameworlds.gameworld import GameWorld
 import numpy as np
 from collections import deque
@@ -121,6 +121,7 @@ class ReinforcementLearningAgent:
 
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
+            print(save_params_interval)
 
             if ep % save_params_interval == 0 and ep > 0:
                 print("Saved network weights")

@@ -5,9 +5,10 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import random
-from config import Config as cfg
+from config import cfg
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # Disable gpu
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable gpu
 
 
 class ActorNet:
@@ -15,11 +16,13 @@ class ActorNet:
     Neural network actor
     """
 
-    def __init__(self, path: str, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
+    def __init__(
+        self, path: str, input_shape=cfg.input_shape, output_dim=cfg.output_length
+    ) -> None:
 
         self.path = path
         input_layer = keras.Input(shape=input_shape, name="Input")
-        x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
+        x = layers.Conv2D(64, 3, strides=1, padding="same")(input_layer)
         x = keras.activations.relu(x)
         x = layers.BatchNormalization()(x)
         # x = layers.Flatten()(x)
@@ -36,29 +39,30 @@ class ActorNet:
         x = self.residual_block(x, filters=64)
         x = self.residual_block(x, filters=64)
 
-        y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
+        y = layers.Conv2D(1, 1, strides=1, padding="same")(x)
         y = keras.activations.relu(y)
         y = layers.BatchNormalization()(y)
         y = layers.Flatten()(y)
         policy_output_layer = layers.Dense(
-            output_dim, activation=tf.nn.softmax, name="policy")(y)
+            output_dim, activation=tf.nn.softmax, name="policy"
+        )(y)
 
-        z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
+        z = layers.Conv2D(1, 1, strides=1, padding="same")(x)
         z = keras.activations.relu(z)
         z = layers.BatchNormalization()(z)
         z = layers.Flatten()(z)
-        z = layers.Dense(50, activation='relu')(z)
+        z = layers.Dense(50, activation="relu")(z)
 
-        value_output_layer = layers.Dense(
-            1, activation=tf.nn.tanh, name="value")(z)
+        value_output_layer = layers.Dense(1, activation=tf.nn.tanh, name="value")(z)
 
-        self.policy = keras.Model(
-            input_layer, policy_output_layer, name="policy_model")
-        self.value = keras.Model(
-            input_layer, value_output_layer, name="value_model")
+        self.policy = keras.Model(input_layer, policy_output_layer, name="policy_model")
+        self.value = keras.Model(input_layer, value_output_layer, name="value_model")
 
-        self.model = keras.Model(inputs=input_layer, outputs=[
-                                 policy_output_layer, value_output_layer], name="2HNET")
+        self.model = keras.Model(
+            inputs=input_layer,
+            outputs=[policy_output_layer, value_output_layer],
+            name="2HNET",
+        )
 
         losses = {
             "policy": "categorical_crossentropy",
@@ -76,13 +80,15 @@ class ActorNet:
 
     @staticmethod
     def residual_block(x, filters: int, kernel_size=3):
-        y = layers.Conv2D(kernel_size=kernel_size,
-                          filters=filters, strides=1, padding='same')(x)
+        y = layers.Conv2D(
+            kernel_size=kernel_size, filters=filters, strides=1, padding="same"
+        )(x)
         y = keras.activations.relu(y)
         y = layers.BatchNormalization()(y)
 
-        y = layers.Conv2D(kernel_size=kernel_size,
-                          filters=filters, strides=1, padding='same')(x)
+        y = layers.Conv2D(
+            kernel_size=kernel_size, filters=filters, strides=1, padding="same"
+        )(x)
 
         out = layers.Add()([y, x])
 
@@ -124,8 +130,7 @@ class ActorNet:
         # Softmax output
         probs = self.policy(np.array([world.as_vector()]))[0]
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
         # if world.player == -1:
         # probs *= mask.reshape((world.k, world.k)).T.flatten()
         # else:
@@ -171,8 +176,7 @@ class ActorNet:
             action = random.choice(legal_actions)
             return action, value
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
         # if world.player == -1:
         # probs *= mask.reshape((world.k, world.k)).T.flatten()
         # else:
@@ -213,12 +217,14 @@ class ActorNet:
 
         return v[0][0].numpy()
 
-    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5):
+    def train(
+        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5
+    ):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
             epochs=epochs,
-            batch_size=1
+            batch_size=1,
         )
 
     def save_params(self, i, suffix=""):

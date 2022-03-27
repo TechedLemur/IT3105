@@ -2,7 +2,7 @@ from numpy import dtype
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
-from config import Config
+from config import cfg
 import numpy as np
 
 
@@ -11,7 +11,7 @@ class NimState(State):
     pieces: int
 
     def as_vector(self):
-        one_hot = np.zeros(Config.N, dtype=np.float32)
+        one_hot = np.zeros(cfg.N, dtype=np.float32)
         one_hot[self.pieces] = 1
         return one_hot
 
@@ -29,27 +29,21 @@ class NimAction(Action):
 
 class NimWorld(GameWorld):
     """
-    A very simple version of NIM provides a nice challenge for MCTS. The 2-player game is defined by two key parameters: 
+    A very simple version of NIM provides a nice challenge for MCTS. The 2-player game is defined by two key parameters:
     N and K. N is the number of pieces on the board, and K is the maximum number that a player can take off the
     board on their turn; the minimum pieces to remove is always ONE
     """
 
-    def __init__(self, K: int = Config.K, N: int = Config.N, current_pieces=Config.N):
+    def __init__(self, K: int = cfg.K, N: int = cfg.N, current_pieces=cfg.N):
 
         self.state = NimState(is_final_state=N == 0, pieces=current_pieces)
         self.K = K
-        self.all_actions = list(
-            NimAction(i)
-            for i in range(1, K+1)
-        )
+        self.all_actions = list(NimAction(i) for i in range(1, K + 1))
         self.N = N
 
     def get_legal_actions(self):
 
-        return list(
-            NimAction(i)
-            for i in range(1, min(self.K, self.state.pieces)+1)
-        )
+        return list(NimAction(i) for i in range(1, min(self.K, self.state.pieces) + 1))
 
     def do_action(self, action: NimAction) -> State:
 
