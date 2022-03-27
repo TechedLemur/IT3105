@@ -4,14 +4,14 @@ from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
-from config import Config
+from config import cfg
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
 from IPython.display import clear_output
 
 
-def generate_neighbors(K=Config.k) -> dict:
+def generate_neighbors(K=cfg.k) -> dict:
     """
     Helper method for generating a look-up table for neighbouring nodes.
     Generate once and reuse to increase performance.
@@ -22,41 +22,69 @@ def generate_neighbors(K=Config.k) -> dict:
 
             if row == 0:  # Top row
                 if col == 0:  # Top left corner
-                    neighbors[(row, col)] = [(row, col+1), (row + 1, col)]
-                elif col == K-1:  # Top right corner
-                    neighbors[(row, col)] = [(row, col-1),
-                                             (row + 1, col), (row+1, col-1)]
+                    neighbors[(row, col)] = [(row, col + 1), (row + 1, col)]
+                elif col == K - 1:  # Top right corner
+                    neighbors[(row, col)] = [
+                        (row, col - 1),
+                        (row + 1, col),
+                        (row + 1, col - 1),
+                    ]
                 else:  # Middle pieces
-                    neighbors[(row, col)] = [(row, col+1), (row, col-1),
-                                             (row + 1, col), (row + 1, col - 1)]
-            elif row == K-1:  # Bottom row
+                    neighbors[(row, col)] = [
+                        (row, col + 1),
+                        (row, col - 1),
+                        (row + 1, col),
+                        (row + 1, col - 1),
+                    ]
+            elif row == K - 1:  # Bottom row
                 if col == 0:  # Bottom left corner
-                    neighbors[(row, col)] = [(row, col+1),
-                                             (row - 1, col), (row - 1, col+1)]
-                elif col == K-1:  # Bottom right corner
-                    neighbors[(row, col)] = [(row, col-1), (row - 1, col)]
+                    neighbors[(row, col)] = [
+                        (row, col + 1),
+                        (row - 1, col),
+                        (row - 1, col + 1),
+                    ]
+                elif col == K - 1:  # Bottom right corner
+                    neighbors[(row, col)] = [(row, col - 1), (row - 1, col)]
                 else:  # Middle pieces
-                    neighbors[(row, col)] = [(row, col+1), (row, col-1),
-                                             (row - 1, col), (row - 1, col + 1)]
+                    neighbors[(row, col)] = [
+                        (row, col + 1),
+                        (row, col - 1),
+                        (row - 1, col),
+                        (row - 1, col + 1),
+                    ]
 
             else:  # Middle rows
 
                 if col == 0:  # Left column
-                    neighbors[(row, col)] = [(row, col+1), (row - 1,
-                                                            col), (row + 1, col), (row - 1, col+1)]
-                elif col == K-1:  # Right column
-                    neighbors[(row, col)] = [(row, col-1),
-                                             (row+1, col-1), (row + 1, col), (row - 1, col)]
+                    neighbors[(row, col)] = [
+                        (row, col + 1),
+                        (row - 1, col),
+                        (row + 1, col),
+                        (row - 1, col + 1),
+                    ]
+                elif col == K - 1:  # Right column
+                    neighbors[(row, col)] = [
+                        (row, col - 1),
+                        (row + 1, col - 1),
+                        (row + 1, col),
+                        (row - 1, col),
+                    ]
                 else:  # Middle pieces
-                    neighbors[(row, col)] = [(row, col-1), (row+1, col-1),
-                                             (row + 1, col), (row - 1, col), (row, col+1), (row-1, col+1)]
+                    neighbors[(row, col)] = [
+                        (row, col - 1),
+                        (row + 1, col - 1),
+                        (row + 1, col),
+                        (row - 1, col),
+                        (row, col + 1),
+                        (row - 1, col + 1),
+                    ]
     return neighbors
 
 
 neighbors = generate_neighbors()
 
 
-def generate_bridge_dict(K=Config.k):
+def generate_bridge_dict(K=cfg.k):
     """
     Generate a dictionary mapping each cell to their possible bridge carrier and endpoints
     Format [(carrier1, carrier2, endpoind1), (carrier3, carrier4, endpoind2)...]
@@ -105,7 +133,7 @@ def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray
         ind = 1
 
     side1 = move[ind] == 0  # Piece inserted in top/left row
-    side2 = move[ind] == k-1  # Piece inserted in bottom/right row
+    side2 = move[ind] == k - 1  # Piece inserted in bottom/right row
 
     Q = list(neighbors[move])
     visited = set()
@@ -113,10 +141,10 @@ def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray
         p = Q.pop()
         visited.add(p)
 
-        if (board[p] == player):
+        if board[p] == player:
             if p[ind] == 0:
                 side1 = True
-            elif p[ind] == k-1:
+            elif p[ind] == k - 1:
                 side2 = True
 
             if side1 and side2:  # Connected
@@ -174,7 +202,7 @@ class HexState(State):
         else:
             player = -1
 
-        n = int(np.sqrt(len(array)-1))
+        n = int(np.sqrt(len(array) - 1))
 
         board = np.array(array[1:]).reshape((n, n))
 
@@ -182,7 +210,9 @@ class HexState(State):
         # Calculate final state. Maybe not necessary, as there is no use to continue after a game is finished
         for i in range(n):
             if player == 1:
-                if is_final_move(move=(0, i), player=1, k=n, board=board):  # Check all top pieces
+                if is_final_move(
+                    move=(0, i), player=1, k=n, board=board
+                ):  # Check all top pieces
                     final = True
                     break
             else:  # Player -1
@@ -196,8 +226,8 @@ class HexState(State):
         # TODO? (performance gains): Make converter directly from "Flattened Game State" to ANET input without proxy through HexState
 
     @staticmethod
-    def empty_board(starting_player: int = 1, k=Config.k):
-        board = np.zeros(k**2).reshape((k, k))
+    def empty_board(starting_player: int = 1, k=cfg.k):
+        board = np.zeros(k ** 2).reshape((k, k))
         return HexState(is_final_state=False, player=starting_player, board=board, k=k)
 
     def get_legal_actions(self) -> List[HexAction]:
@@ -209,7 +239,7 @@ class HexState(State):
             return actions
         for i in range(self.k):
             for j in range(self.k):
-                if (self.board[i][j] == 0):  # Empty space
+                if self.board[i][j] == 0:  # Empty space
                     actions.append(HexAction(row=i, col=j))
 
         return actions
@@ -228,37 +258,56 @@ class HexState(State):
         r = action.row
         c = action.col
 
-        if (board[r][c] != 0):
+        if board[r][c] != 0:
             raise Exception("Cannot place here :(")
 
         board[r][c] = self.player
 
-        final = is_final_move(board=board, move=(
-            r, c), player=self.player)
+        final = is_final_move(board=board, move=(r, c), player=self.player)
 
-        return HexState(is_final_state=final, player=-
-                        self.player, board=board, k=self.k)
+        return HexState(
+            is_final_state=final, player=-self.player, board=board, k=self.k
+        )
 
     def inverted(self):
         """
         Returns a new state where the board is transposed and the colors reversed
         """
-        return HexState(is_final_state=self.is_final_state, player=-self.player, board=-self.board.T, k=self.k)
+        return HexState(
+            is_final_state=self.is_final_state,
+            player=-self.player,
+            board=-self.board.T,
+            k=self.k,
+        )
 
     def rotate180(self):
         """
         Returns a new state where the board is rotated 180 degrees, as well as the inverted version of this state
         """
 
-        return (HexState(is_final_state=self.is_final_state, player=self.player, board=np.rot90(self.board, 2), k=self.k),
-                HexState(is_final_state=self.is_final_state, player=-self.player, board=-np.rot90(self.board, 2).T, k=self.k))
+        return (
+            HexState(
+                is_final_state=self.is_final_state,
+                player=self.player,
+                board=np.rot90(self.board, 2),
+                k=self.k,
+            ),
+            HexState(
+                is_final_state=self.is_final_state,
+                player=-self.player,
+                board=-np.rot90(self.board, 2).T,
+                k=self.k,
+            ),
+        )
 
     def as_vector(self, mode=1):
         """
         Returns the game state as a vector intended to use as input for the ANET.
 
         """
-        if mode == 0:  # Basic, we want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
+        if (
+            mode == 0
+        ):  # Basic, we want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
             vector = []
             if self.player == 1:
                 board = self.board
@@ -365,7 +414,7 @@ class HexState(State):
 
     def plot(self, labels: bool = False):
 
-        cdict = {0: 'grey', 1: 'red', -1: 'blue'}
+        cdict = {0: "grey", 1: "red", -1: "blue"}
 
         G = nx.Graph()
         colormap = []
@@ -381,19 +430,19 @@ class HexState(State):
         for el in G.edges:
             key = el[0]
             n = el[1]
-            if key[0] == 0 or key[0] == k-1:
+            if key[0] == 0 or key[0] == k - 1:
                 if key[0] == n[0]:
-                    edgemap.append('red')
+                    edgemap.append("red")
 
                 else:
-                    edgemap.append('black')
-            elif key[1] == 0 or key[1] == k-1:
+                    edgemap.append("black")
+            elif key[1] == 0 or key[1] == k - 1:
                 if key[1] == n[1]:
-                    edgemap.append('blue')
+                    edgemap.append("blue")
                 else:
-                    edgemap.append('black')
+                    edgemap.append("black")
             else:
-                edgemap.append('black')
+                edgemap.append("black")
 
         clear_output(wait=True)
         plt.figure(figsize=(10, 10))
@@ -404,7 +453,7 @@ class HexState(State):
         nx.draw(G, pos=pos, node_color=colormap,
                 node_size=400, edge_color=edgemap)
         if labels:
-            nx.draw_networkx_labels(G, pos, verticalalignment='center')
+            nx.draw_networkx_labels(G, pos, verticalalignment="center")
         plt.show()
 
     def copy(self):

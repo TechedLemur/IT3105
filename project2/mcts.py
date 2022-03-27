@@ -1,6 +1,6 @@
 import random
 from typing import List, Optional, Tuple
-from config import Config as cfg
+from config import cfg
 import uuid
 
 import numpy as np

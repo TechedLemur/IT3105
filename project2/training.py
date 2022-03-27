@@ -1,23 +1,37 @@
 from rl import ReinforcementLearningAgent
-from config import Config
+from config import cfg
 from datetime import datetime
 import numpy as np
+import os
+import sys
+import shutil
 
-suffix = f"{Config.k}x{Config.k}"
 
+if __name__ == "__main__":
 
-if __name__ == '__main__':
-    rlAgent = ReinforcementLearningAgent()
+    suffix = f"{cfg.k}x{cfg.k}"
+    timestamp = datetime.now().isoformat()[:19]
+    # Save data for possible later training
+    timestamp = timestamp.replace(":", "-")
 
+    if len(sys.argv) > 2:
+        path = f"{sys.argv[2]}/data/{timestamp}_{suffix}"
+    else:
+        path = f"data/{timestamp}_{suffix}"
+
+    os.mkdir(path)
+    os.mkdir(f"{path}/models")
+    os.mkdir(f"{path}/dataset")
+
+    rlAgent = ReinforcementLearningAgent(path=path)
     rlAgent.train(file_suffix=suffix, n_parallel=1)
 
     print(f"Saving {len(rlAgent.x_train)} cases")
 
-    # Because Windows cannot have : in filename ._.
-    timestamp = datetime.now().isoformat()[:19]
-    # Save data for possible later training
-    timestamp = timestamp.replace(":", "-")
-    with open(f'project2/data/{timestamp}_{suffix}.npy', 'wb') as f:
+    with open(f"{path}/dataset/{timestamp}_{suffix}.npy", "wb") as f:
         np.save(f, rlAgent.states)
         np.save(f, rlAgent.y_train)
         np.save(f, rlAgent.y_train_value)
+
+    config_file = sys.argv[1]
+    shutil.copyfile(f"./configs/{config_file}", f"{path}/{config_file}")

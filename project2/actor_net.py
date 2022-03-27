@@ -5,7 +5,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import random
-from config import Config as cfg
+from config import cfg
 import os
 from keras.layers.advanced_activations import LeakyReLU
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # Disable gpu
@@ -16,8 +16,11 @@ class ActorNet:
     Neural network actor
     """
 
-    def __init__(self, input_shape=cfg.input_shape, output_dim=cfg.output_length) -> None:
+    def __init__(
+        self, path: str, input_shape=cfg.input_shape, output_dim=cfg.output_length
+    ) -> None:
 
+        self.path = path
         input_layer = keras.Input(shape=input_shape, name="Input")
         x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
         x = LeakyReLU()(x)
@@ -41,13 +44,14 @@ class ActorNet:
         y = layers.BatchNormalization()(y)
         y = layers.Flatten()(y)
         policy_output_layer = layers.Dense(
-            output_dim, activation=tf.nn.softmax, name="policy")(y)
+            output_dim, activation=tf.nn.softmax, name="policy"
+        )(y)
 
         z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
         z = LeakyReLU()(z)
         z = layers.BatchNormalization()(z)
         z = layers.Flatten()(z)
-        z = layers.Dense(50, activation='relu')(z)
+        z = layers.Dense(50, activation="relu")(z)
 
         value_output_layer = layers.Dense(
             1, activation=tf.nn.tanh, name="value")(z)
@@ -57,8 +61,11 @@ class ActorNet:
         self.value = keras.Model(
             input_layer, value_output_layer, name="value_model")
 
-        self.model = keras.Model(inputs=input_layer, outputs=[
-                                 policy_output_layer, value_output_layer], name="2HNET")
+        self.model = keras.Model(
+            inputs=input_layer,
+            outputs=[policy_output_layer, value_output_layer],
+            name="2HNET",
+        )
 
         losses = {
             "policy": "categorical_crossentropy",
@@ -81,8 +88,9 @@ class ActorNet:
         y = LeakyReLU()(y)
         y = layers.BatchNormalization()(y)
 
-        y = layers.Conv2D(kernel_size=kernel_size,
-                          filters=filters, strides=1, padding='same')(x)
+        y = layers.Conv2D(
+            kernel_size=kernel_size, filters=filters, strides=1, padding="same"
+        )(x)
 
         out = layers.Add()([y, x])
 
@@ -195,7 +203,7 @@ class ActorNet:
     @staticmethod
     def winning_heuristic(state, legal_actions):
         """
-        Check all child states, and if we have a winning state, choose it. 
+        Check all child states, and if we have a winning state, choose it.
         """
         winning = []
         for a in legal_actions:
@@ -213,7 +221,9 @@ class ActorNet:
 
         return v[0][0].numpy()
 
-    def train(self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5):
+    def train(
+        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5
+    ):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
@@ -221,7 +231,7 @@ class ActorNet:
         )
 
     def save_params(self, i, suffix=""):
-        self.model.save_weights(f"models/model{i}{suffix}")
+        self.model.save_weights(f"{self.path}/models/model{i}{suffix}")
 
     def load_params(self, i, suffix=""):
-        self.model.load_weights(f"models/model{i}{suffix}")
+        self.model.load_weights(f"{self.path}/models/model{i}{suffix}")
