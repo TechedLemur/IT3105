@@ -206,20 +206,22 @@ class HexState(State):
 
         board = np.array(array[1:]).reshape((n, n))
 
+        board = np.where(board > 1, -1, board)
+
         final = False
         # Calculate final state. Maybe not necessary, as there is no use to continue after a game is finished
-        for i in range(n):
-            if player == 1:
-                if is_final_move(
-                    move=(0, i), player=1, k=n, board=board
-                ):  # Check all top pieces
-                    final = True
-                    break
-            else:  # Player -1
-                # Check all left pieces
-                if is_final_move(move=(i, 0), player=-1, k=n, board=board):
-                    final = True
-                    break
+        # for i in range(n):
+        #     if player == 1:
+        #         if is_final_move(
+        #             move=(0, i), player=1, k=n, board=board
+        #         ):  # Check all top pieces
+        #             final = True
+        #             break
+        #     else:  # Player -1
+        #         # Check all left pieces
+        #         if is_final_move(move=(i, 0), player=-1, k=n, board=board):
+        #             final = True
+        #             break
 
         return HexState(is_final_state=final, player=player, board=board, k=n)
 

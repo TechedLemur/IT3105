@@ -147,7 +147,6 @@ class ActorNet:
         probs = probs ** 5
 
         probs = probs / np.sum(probs)
-
         # Rescale
         probs = np.around(probs, 4)
         probs = probs / np.sum(probs)
