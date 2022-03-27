@@ -120,7 +120,7 @@ def generate_bridge_dict(K=cfg.k):
 bridges = generate_bridge_dict()
 
 
-def is_final_move(move: Tuple[int, int], player=1, k=Config.k, board: np.ndarray = None) -> bool:
+def is_final_move(move: Tuple[int, int], player=1, k=cfg.k, board: np.ndarray = None) -> bool:
     """
     Returns True if the move is a winning move for the player, False otherwise.
     Do a breadth-first search from the placed piece, and see if the two edges for the player is connected.
