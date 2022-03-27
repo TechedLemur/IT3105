@@ -9,7 +9,6 @@ import shutil
 
 if __name__ == "__main__":
 
-    print("Starting training")
 
     suffix = f"{cfg.k}x{cfg.k}"
     timestamp = datetime.now().isoformat()[:19]
@@ -26,6 +25,7 @@ if __name__ == "__main__":
     os.mkdir(f"{path}/dataset")
 
     rlAgent = ReinforcementLearningAgent(path=path)
+    print("Starting training")
     rlAgent.train(file_suffix=suffix, n_parallel=1)
 
     print(f"Saving {len(rlAgent.x_train)} cases")
