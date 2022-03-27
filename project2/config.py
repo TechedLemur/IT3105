@@ -49,6 +49,11 @@ class Config:
         self.K = 5
         self.N = 5
 
-print("Config file: ", sys.argv[1])
-cfg = Config(sys.argv[1])
+if sys.argv[1][::-4] == "json":
+    cfg_file = sys.argv[1]
+else:
+    cfg_file = "base.json"
+
+print("Config file: ", cfg_file)
+cfg = Config(cfg_file)
 
