@@ -120,7 +120,7 @@ class ReinforcementLearningAgent:
         n = min(n_parallel, cpu_count())
 
         print(
-            f"Running {cfg.episodes} episodes with {cfg.search_games} search games")
+            f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}")
 
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
