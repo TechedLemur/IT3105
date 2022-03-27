@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 import os
 import sys
+import shutil
 
 
 if __name__ == "__main__":
@@ -31,3 +32,6 @@ if __name__ == "__main__":
         np.save(f, rlAgent.states)
         np.save(f, rlAgent.y_train)
         np.save(f, rlAgent.y_train_value)
+
+    config_file = sys.argv[1]
+    shutil.copyfile(f"./configs/{config_file}", f"{path}/{config_file}")
