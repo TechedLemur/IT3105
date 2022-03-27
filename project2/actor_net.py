@@ -7,6 +7,7 @@ import numpy as np
 import random
 from config import Config as cfg
 import os
+from keras.layers.advanced_activations import LeakyReLU
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # Disable gpu
 
 
@@ -19,7 +20,7 @@ class ActorNet:
 
         input_layer = keras.Input(shape=input_shape, name="Input")
         x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
-        x = keras.activations.relu(x)
+        x = LeakyReLU()(x)
         x = layers.BatchNormalization()(x)
         # x = layers.Flatten()(x)
         # x = layers.Dense(100)(x)
@@ -36,14 +37,14 @@ class ActorNet:
         x = self.residual_block(x, filters=64)
 
         y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        y = keras.activations.relu(y)
+        y = LeakyReLU()(y)
         y = layers.BatchNormalization()(y)
         y = layers.Flatten()(y)
         policy_output_layer = layers.Dense(
             output_dim, activation=tf.nn.softmax, name="policy")(y)
 
         z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        z = keras.activations.relu(z)
+        z = LeakyReLU()(z)
         z = layers.BatchNormalization()(z)
         z = layers.Flatten()(z)
         z = layers.Dense(50, activation='relu')(z)
@@ -77,7 +78,7 @@ class ActorNet:
     def residual_block(x, filters: int, kernel_size=3):
         y = layers.Conv2D(kernel_size=kernel_size,
                           filters=filters, strides=1, padding='same')(x)
-        y = keras.activations.relu(y)
+        y = LeakyReLU()(y)
         y = layers.BatchNormalization()(y)
 
         y = layers.Conv2D(kernel_size=kernel_size,
@@ -85,7 +86,7 @@ class ActorNet:
 
         out = layers.Add()([y, x])
 
-        out = keras.activations.relu(out)
+        out = LeakyReLU()(out)
         out = layers.BatchNormalization()(out)
 
         return out

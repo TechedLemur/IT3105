@@ -26,7 +26,7 @@ class ReinforcementLearningAgent:
         epsilon = params[3]
 
         world = HexState.empty_board(starting_player=starting_player)
-        if not anet:
+        if not anet and (cfg.random_rollout_move_p + rollout_chance) < 2:
             anet = ActorNet(cfg.input_shape, cfg.output_length)
             anet.set_weights(anet_weigths)
             anet.epsilon = epsilon
@@ -167,8 +167,14 @@ class ReinforcementLearningAgent:
             # print()
             # print(x_train[mini_batch])
             # print(y_train[mini_batch])
-            self.anet.train(x_train, y_train,
-                            y_train_value=y_train_value)
+
+            for _ in range(n):
+                # Select half the replay buffer randomly
+                ind = np.random.choice(
+                    np.arange(len(x_train)), len(x_train)//2, replace=False)
+
+                self.anet.train(x_train[ind], y_train[ind],
+                                y_train_value=y_train_value[ind], epochs=2)
             # self.anet.train(x_train[mini_batch], y_train[mini_batch],
             #                 y_train_value=y_train_value[mini_batch])
 
