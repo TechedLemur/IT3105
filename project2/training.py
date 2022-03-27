@@ -19,7 +19,7 @@ if __name__ == "__main__":
     else:
         path = f"data/{timestamp}_{suffix}"
 
-    os.mkdir(path)
+    os.makedirs(path)
     os.mkdir(f"{path}/models")
     os.mkdir(f"{path}/dataset")
 
