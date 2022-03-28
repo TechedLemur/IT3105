@@ -1,0 +1,22 @@
+{
+    "k": 7,
+    "mini_batch_size": 500,
+    "replay_buffer_size": 1000,
+    "episodes": 150,
+    "search_games": 1000,
+    "c": 1.0,
+    "random_rollout_move_p": 0.1,
+    "rollout_chance": 0.6,
+    "rollout_decay": 0.90,
+    "reward_decay": 1.0,
+    "input_planes": 9,
+    "padding" : 2,
+    "layers": [],
+    "activations": [],
+    "learning_rate": 0.001,
+    "epsilon": 0.9,
+    "epsilon_decay": 0.99,
+    "optimizer": "adam",
+    "M": 10,
+    "G": 50
+}
