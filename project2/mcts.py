@@ -24,7 +24,8 @@ class MCTSNode:
         self.state = state
         self.children: dict[Action, MCTSNode] = {}
         self.visits = 0
-
+        p = np.ones(len(state.get_legal_actions()))
+        self.p = p / np.sum(p)
         self.id = uuid.uuid4()
 
     def is_final_state(self) -> Tuple[bool, int]:
@@ -93,9 +94,13 @@ class MCTS:
             else:  # Use critic
                 is_finished, z = leaf_node.is_final_state()
                 if not is_finished:
-                    a, z = self.actor.get_action_and_reward(leaf_node.state)
-                    # Add node to visited
-                    self.visited.append((leaf_node, a))
+                    p, z = self.actor.get_policy_and_reward(leaf_node.state)
+                    alpha = 2  # Should be about 10 / #moves TODO: confiig
+                    d = np.random.dirichlet(alpha=[alpha]*len(p))
+                    e = 0.8  # TODO: confiig
+                    noisy_p = e*p + (1-e) * d  # Dirichlet Noise
+                    leaf_node.p = noisy_p
+
                 self.V_i[self.iteration] = z
             self.backpropagate()
 
@@ -138,11 +143,19 @@ class MCTS:
         it = 0
         current_node = start_node
         while not game_finished:
+
+            legal_actions = self.current_world.get_legal_actions()
             if random.random() <= cfg.random_rollout_move_p:
-                legal_actions = self.current_world.get_legal_actions()
                 action = random.choice(legal_actions)
             else:
-                action = self.actor.select_action(self.current_world)
+                probs = self.actor.get_policy(self.current_world)
+                alpha = 2  # Should be about 10 / #moves TODO: confiig
+                d = np.random.dirichlet(alpha=[alpha]*len(probs))
+                e = 0.8
+                noisy_p = e*probs + (1-e) * d
+                # TODO: Set node.p = noisy_p
+                action = np.random.choice(legal_actions, p=noisy_p)
+
             # The start-node is the leaf-node which should be regarded as visited.
             if it == 0:
                 self.visited.append((start_node, action))
@@ -184,12 +197,14 @@ class MCTS:
 
         if node.state.player == 1:
             action_values = Q_s_a + \
-                MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+                MCTS.puct(self.N_s[node], N_s_a, node.p) * \
+                int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.max(action_values))
         else:
             action_values = Q_s_a - \
-                MCTS.uct(self.N_s[node], N_s_a) * int(apply_exploraty_bonus)
+                MCTS.puct(self.N_s[node], N_s_a, node.p) * \
+                int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.min(action_values))
 
@@ -237,19 +252,35 @@ class MCTS:
         Returns:
             np.array: UCT-calculation.
         """
-        return cfg.c * np.sqrt(np.log(N_s) / (1 + N_s_a))
+        return cfg.c * np.sqrt(np.log(1+N_s) / (1 + N_s_a))
 
-    def get_visit_counts_from_root(self) -> np.array:
+    @staticmethod
+    def puct(N_s: int, N_s_a: np.array, p: np.array) -> np.array:
+        """The UCT-calculation.
+
+        Args:
+            N_s (int): Number of visits for node.
+            N_s_a (np.array): Number of visits of arches from node.
+
+        Returns:
+            np.array: UCT-calculation.
+        """
+        return cfg.c * np.sqrt(N_s / (1 + N_s_a)) * p
+
+    def get_visit_counts_from_root(self) -> Tuple[np.array, float]:
         """Get the visit count distribution from root.
 
         Returns:
             np.array: Visit count distribution from root.
+            float: q_value of root
         """
         visit_counts = np.zeros((cfg.k, cfg.k))
+        q = 0
         for a in self.root.children.keys():
             visit_counts[a.row][a.col] = self.N_s_a[self.root, a]
+            q += self.Q[(self.root, a)]
         # Make a distribution
-        return (visit_counts / np.sum(visit_counts)).flatten()
+        return (visit_counts / np.sum(visit_counts)).flatten(), q
 
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used

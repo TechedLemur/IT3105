@@ -124,17 +124,15 @@ class ActorNet:
         """
 
         legal_actions = world.get_legal_actions()
-
         h = self.winning_heuristic(world, legal_actions)
 
         if h:
-            return h
+            return legal_actions[random.choice(h)]
 
-        if random.random() < self.epsilon and not greedy:
+        if random.random() < self.epsilon and not greedy:  # TODO: Dirichlet Noise
             return random.choice(legal_actions)
 
         # A list with all possible actions in the game (legal and not)
-
         all_actions = world.get_all_actions()
 
         # Softmax output
@@ -148,7 +146,7 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
-        probs = probs ** 5
+        probs = probs ** 1
 
         probs = probs / np.sum(probs)
         # Rescale
@@ -166,60 +164,66 @@ class ActorNet:
         # new_action = new_action.transposed()
         return new_action
 
-    def get_action_and_reward(self, state: State, greedy=False):
-
+    def get_policy(self, state):
+        """
+        Returns a list of 
+        """
         legal_actions = state.get_legal_actions()
-
-        all_actions = state.get_all_actions()
-
-        # A list with all possible actions in the game (legal and not)
-        prediction = self.model(np.array([state.as_vector()]))
-        probs = prediction[0]
-        value = prediction[1][0][0].numpy()
 
         h = self.winning_heuristic(state, legal_actions)
 
         if h:
-            return h, value
+            probs = np.zeros(len(legal_actions))
+            probs[h] = 1
+            probs = probs / np.sum(probs)
+            return probs
 
-        if random.random() < self.epsilon and not greedy:
-            action = random.choice(legal_actions)
-            return action, value
+        prediction = self.policy(np.array([state.as_vector()]))
+        probs = prediction[0].numpy().reshape(cfg.k, cfg.k)
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
-        # if world.player == -1:
-        # probs *= mask.reshape((world.k, world.k)).T.flatten()
-        # else:
-        # probs *= mask
-        probs *= mask
+        p = np.zeros(len(legal_actions))
 
-        probs = np.around(probs, 4)
+        for i, a in enumerate(legal_actions):
+            p[i] = probs[a.row, a.col]
 
-        probs = probs / np.sum(probs)
+        return p / np.sum(p)
 
-        # Select an action based on the probability estimate
-        action = np.random.choice(all_actions, p=probs[0])
+    def get_policy_and_reward(self, state: State, greedy=False):
 
-        # new_action = all_actions[new_action_index]
+        legal_actions = state.get_legal_actions()
 
-        # if world.player == -1:
-        # new_action = new_action.transposed()
-        return action, value
+        h = self.winning_heuristic(state, legal_actions)
+
+        if h:
+            probs = np.zeros(len(legal_actions))
+            probs[h] = 1
+            probs = probs / np.sum(probs)
+            return probs, state.player
+
+        prediction = self.model(np.array([state.as_vector()]))
+        probs = prediction[0][0].numpy().reshape(cfg.k, cfg.k)
+        value = prediction[1][0][0].numpy()
+
+        p = np.zeros(len(legal_actions))
+
+        for i, a in enumerate(legal_actions):
+            p[i] = probs[a.row, a.col]
+
+        return p / np.sum(p), value
 
     @staticmethod
-    def winning_heuristic(state, legal_actions):
+    def winning_heuristic(state, legal_actions) -> List[int]:
         """
         Check all child states, and if we have a winning state, choose it.
+        Returns list of indices of winning moves
         """
         winning = []
-        for a in legal_actions:
-            if state.do_action(a).is_final_state:
-                winning.append(a)
 
-        if winning:
-            return random.choice(winning)
-        return None
+        for i, a in enumerate(legal_actions):
+            if state.do_action(a).is_final_state:
+                winning.append(i)
+
+        return winning
 
     def evaluate_state(self, state: State) -> float:
         # TODO: See if it makes sense to predict multiple states at the same time

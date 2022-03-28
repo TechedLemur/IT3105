@@ -39,13 +39,15 @@ class ReinforcementLearningAgent:
         y_train = []
         states = []
         reward_factors = []
+        Q = []
         all_actions = world.get_all_actions()
+        temperature = 1  # TODO: Add to config
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
 
             # player = -player
-            D = mcts.get_visit_counts_from_root()
+            D, q = mcts.get_visit_counts_from_root()
 
             # print("D: ", D)
             # Decay rewards after each move
@@ -58,11 +60,13 @@ class ReinforcementLearningAgent:
             x_train.append(state.as_vector())
             y_train.append(D)
             reward_factors.append(1)
+            Q.append(q)
 
             inverted = state.inverted()
             x_train.append(inverted.as_vector())
             y_train.append(D_matrix.T.flatten())
             reward_factors.append(-1)
+            Q.append(-q)
             states.append(inverted.to_array())
 
             rot, invRot = state.rotate180()
@@ -70,15 +74,17 @@ class ReinforcementLearningAgent:
             x_train.append(rot.as_vector())
             y_train.append(np.rot90(D_matrix, 2).flatten())
             reward_factors.append(1)
+            Q.append(q)
             states.append(rot.to_array())
 
             x_train.append(invRot.as_vector())
             y_train.append(np.rot90(D_matrix.T, 2).flatten())
             reward_factors.append(-1)
+            Q.append(-q)
             states.append(invRot.to_array())
             # Choose actual move (a*) based on D
 
-            probs = D ** 3
+            probs = D ** temperature
             probs = probs / np.sum(probs)
             # Round to avoid floating point error
             probs = np.around(probs, 3)
@@ -94,7 +100,9 @@ class ReinforcementLearningAgent:
         winner = -world.player
 
         print(f"Game finished - used {t2-t1} seconds")
-        y_train_value = winner * np.array(reward_factors)
+
+        y_train_value = winner * \
+            np.array(reward_factors)  # * 0.5 +0.5*np.array(Q) TODO: Fix q
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
@@ -175,13 +183,14 @@ class ReinforcementLearningAgent:
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
             if train_net:
-                for _ in range(n):
-                    # Select half the replay buffer randomly
-                    ind = np.random.choice(
-                        np.arange(len(x_train)), len(x_train)//2, replace=False)
+                # Select batch from newes cases
+                newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
+                batch_size = min(cfg.mini_batch_size, len(x_train))
+                ind = np.random.choice(
+                    newest, batch_size, replace=False)
 
-                    self.anet.train(x_train[ind], y_train[ind],
-                                    y_train_value=y_train_value[ind], epochs=3)
+                self.anet.train(x_train[ind], y_train[ind],
+                                y_train_value=y_train_value[ind], epochs=3)
 
                 self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n

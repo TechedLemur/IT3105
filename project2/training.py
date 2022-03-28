@@ -31,7 +31,7 @@ if __name__ == "__main__":
     rlAgent = ReinforcementLearningAgent(
         path=path, starting_model_path=None)
     print("Starting training")
-    rlAgent.train(file_suffix=suffix, n_parallel=1, train_net=False)
+    rlAgent.train(file_suffix=suffix, n_parallel=1, train_net=True)
 
     print(f"Saving {len(rlAgent.x_train)} cases")
 
