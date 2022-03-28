@@ -4,7 +4,7 @@
     "replay_buffer_size": 10000,
     "episodes": 100,
     "search_games": 1200,
-    "c": 1.0,
+    "c": 2.0,
     "random_rollout_move_p": 0.1,
     "rollout_chance": 0.0,
     "rollout_decay": 1.00,

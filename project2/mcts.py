@@ -95,7 +95,7 @@ class MCTS:
                 is_finished, z = leaf_node.is_final_state()
                 if not is_finished:
                     p, z = self.actor.get_policy_and_reward(leaf_node.state)
-                    alpha = 2  # Should be about 10 / #moves TODO: confiig
+                    alpha = 0.5  # Should be about 10 / #moves TODO: confiig
                     d = np.random.dirichlet(alpha=[alpha]*len(p))
                     e = 0.8  # TODO: confiig
                     noisy_p = e*p + (1-e) * d  # Dirichlet Noise
@@ -265,7 +265,7 @@ class MCTS:
         Returns:
             np.array: UCT-calculation.
         """
-        return cfg.c * np.sqrt(N_s / (1 + N_s_a)) * p
+        return cfg.c * np.sqrt(N_s / (1 + N_s_a)) * p  # TODO: separate config?
 
     def get_visit_counts_from_root(self) -> Tuple[np.array, float]:
         """Get the visit count distribution from root.
