@@ -29,7 +29,7 @@ if __name__ == "__main__":
     os.mkdir(f"{path}/dataset")
 
     rlAgent = ReinforcementLearningAgent(
-        path=path, starting_model_path=start_model)
+        path=path, starting_model_path=None)
     print("Starting training")
     rlAgent.train(file_suffix=suffix, n_parallel=1, train_net=False)
 
