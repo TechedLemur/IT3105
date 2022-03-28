@@ -10,7 +10,7 @@ import shutil
 
 if __name__ == "__main__":
 
-    start_model = "data/2022-03-27T19-41-30_7x7/models/model50"
+    #start_model = "data/2022-03-27T19-41-30_7x7/models/model50"
 
     suffix = f"{cfg.k}x{cfg.k}"
     timestamp = datetime.now().isoformat()[:19]
