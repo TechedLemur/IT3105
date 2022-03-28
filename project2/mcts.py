@@ -95,10 +95,10 @@ class MCTS:
                 is_finished, z = leaf_node.is_final_state()
                 if not is_finished:
                     p, z = self.actor.get_policy_and_reward(leaf_node.state)
-                    alpha = 0.5  # Should be about 10 / #moves TODO: confiig
+                    alpha = cfg.alpha  # Should be about 10 / #moves
                     d = np.random.dirichlet(alpha=[alpha]*len(p))
-                    e = 0.8  # TODO: confiig
-                    noisy_p = e*p + (1-e) * d  # Dirichlet Noise
+                    e = cfg.epsilon  # TODO: Decay?
+                    noisy_p = (1-e)*p + e * d  # Dirichlet Noise
                     leaf_node.p = noisy_p
 
                 self.V_i[self.iteration] = z
@@ -149,11 +149,12 @@ class MCTS:
                 action = random.choice(legal_actions)
             else:
                 probs = self.actor.get_policy(self.current_world)
-                alpha = 2  # Should be about 10 / #moves TODO: confiig
+                alpha = cfg.alpha
                 d = np.random.dirichlet(alpha=[alpha]*len(probs))
-                e = 0.8
-                noisy_p = e*probs + (1-e) * d
-                # TODO: Set node.p = noisy_p
+                e = cfg.epsilon  # TODO: Decay?
+                noisy_p = (1-e)*probs + e * d
+                if it == 0:
+                    start_node.p = noisy_p
                 action = np.random.choice(legal_actions, p=noisy_p)
 
             # The start-node is the leaf-node which should be regarded as visited.

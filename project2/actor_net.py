@@ -129,7 +129,7 @@ class ActorNet:
         if h:
             return legal_actions[random.choice(h)]
 
-        if random.random() < self.epsilon and not greedy:  # TODO: Dirichlet Noise
+        if random.random() < self.epsilon and not greedy:
             return random.choice(legal_actions)
 
         # A list with all possible actions in the game (legal and not)
@@ -146,7 +146,7 @@ class ActorNet:
         # probs *= mask
         probs *= mask
 
-        probs = probs ** 1
+        probs = probs ** cfg.anet_temperature
 
         probs = probs / np.sum(probs)
         # Rescale

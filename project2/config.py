@@ -39,6 +39,12 @@ class Config:
         self.epsilon = c["epsilon"]
         self.epsilon_decay = c["epsilon_decay"]
 
+        self.alpha = c["alpha"]  # alpha for dirichlet distribution
+        self.start_temperature = c["start_temperature"]
+        # Converge towards argmax
+        self.temperature_increase = c["temperature_increase"]
+        self.temperature_max = c["temperature_max"]
+        self.anet_temperature = c["anet_temperature"]
         # The optimizer in the ANET, with (at least) the following options all available: Adagrad, Stochastic Gradient
         # Descent (SGD), RMSProp, and Adam.
         self.optimizer = c["optimizer"]

@@ -41,7 +41,7 @@ class ReinforcementLearningAgent:
         reward_factors = []
         Q = []
         all_actions = world.get_all_actions()
-        temperature = 1  # TODO: Add to config
+        temperature = cfg.start_temperature
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
@@ -96,6 +96,8 @@ class ReinforcementLearningAgent:
             world = world.do_action(action)
             mcts.root = mcts.root.children[action]
             move += 1
+            temperature = min(cfg.temperature_max,
+                              temperature*cfg.temperature_increase)
         t2 = timeit.default_timer()
         winner = -world.player
 
