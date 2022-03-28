@@ -17,7 +17,7 @@ class ActorNet:
     """
 
     def __init__(
-        self, path: str = ".", input_shape=cfg.input_shape, output_dim=cfg.output_length
+        self, path: str = ".", input_shape=cfg.input_shape, output_dim=cfg.output_length, weight_path=None
     ) -> None:
 
         self.path = path
@@ -82,6 +82,10 @@ class ActorNet:
             loss_weights=lossWeights,
             metrics=["accuracy"],
         )
+
+        if weight_path:
+            self.model.load_weights(weight_path)
+            print(f"Loaded weights from {weight_path}")
 
         self.epsilon = cfg.epsilon
 

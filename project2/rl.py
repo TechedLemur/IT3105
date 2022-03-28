@@ -14,8 +14,9 @@ from datetime import datetime
 
 
 class ReinforcementLearningAgent:
-    def __init__(self, path: str):
-        self.anet = ActorNet(path, cfg.input_shape, cfg.output_length)
+    def __init__(self, path: str, starting_model_path=None):
+        self.anet = ActorNet(path, cfg.input_shape,
+                             cfg.output_length, starting_model_path)
         self.path = path
 
     @staticmethod
@@ -75,10 +76,12 @@ class ReinforcementLearningAgent:
             y_train.append(np.rot90(D_matrix.T, 2).flatten())
             reward_factors.append(-1)
             states.append(invRot.to_array())
-
             # Choose actual move (a*) based on D
+
+            probs = D ** 3
+            probs = probs / np.sum(probs)
             # Round to avoid floating point error
-            probs = np.around(D, 3)
+            probs = np.around(probs, 3)
             probs = probs / np.sum(probs)  # Normalize
             # Select action based on distribution D
 
@@ -103,7 +106,7 @@ class ReinforcementLearningAgent:
             np.array(states),
         )
 
-    def train(self, file_suffix="", n_parallel=8):
+    def train(self, file_suffix="", n_parallel=8, train_net=True):
         wins = []
 
         x_train = np.array([])
@@ -171,16 +174,16 @@ class ReinforcementLearningAgent:
                     y_train_value = np.concatenate((y_train_value, r[2]))
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
+            if train_net:
+                for _ in range(n):
+                    # Select half the replay buffer randomly
+                    ind = np.random.choice(
+                        np.arange(len(x_train)), len(x_train)//2, replace=False)
 
-            for _ in range(n):
-                # Select half the replay buffer randomly
-                ind = np.random.choice(
-                    np.arange(len(x_train)), len(x_train)//2, replace=False)
+                    self.anet.train(x_train[ind], y_train[ind],
+                                    y_train_value=y_train_value[ind], epochs=3)
 
-                self.anet.train(x_train[ind], y_train[ind],
-                                y_train_value=y_train_value[ind], epochs=3)
-
-            self.anet.update_epsilon(n=n)
+                self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n
             starting_player *= -1
         wins = np.array(wins).astype(np.float32)

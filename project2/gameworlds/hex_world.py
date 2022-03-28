@@ -411,7 +411,7 @@ class HexState(State):
         return arr
 
     @staticmethod
-    def from_array_to_vector(array, mode=1):
+    def from_array_to_vector(array, mode=2):
         return HexState.from_array(array).as_vector(mode=mode)
 
     def plot(self, labels: bool = False):
