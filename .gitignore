@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+/project2/credentials.json
+/project2/settings.yaml
+
 /mcts-graphs
 # C extensions
 *.so
