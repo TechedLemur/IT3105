@@ -1,5 +1,5 @@
 FROM tensorflow/tensorflow:2.8.0
-RUN pip3 install graphviz sklearn networkx matplotlib ipython
+RUN pip3 install graphviz sklearn networkx matplotlib ipython pydrive
 COPY . /project2/
 WORKDIR /project2
 RUN mkdir -p data
