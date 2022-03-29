@@ -276,10 +276,15 @@ class MCTS:
             float: q_value of root
         """
         visit_counts = np.zeros((cfg.k, cfg.k))
+
         q = 0
+        if self.root.parent:
+            for a, c in self.root.parent.children.items():
+                if c == self.root:
+                    q = self.Q[(self.root.parent, a)]
+
         for a in self.root.children.keys():
             visit_counts[a.row][a.col] = self.N_s_a[self.root, a]
-            q += self.Q[(self.root, a)]
         # Make a distribution
         return (visit_counts / np.sum(visit_counts)).flatten(), q
 
