@@ -68,22 +68,27 @@ class Topp:
 
     def play_topp(agents: List[ActorNet], no_games=50):
         results = {}
+        for a in agents:
+            results[a.name] = []
+
+        played = []
         for agent in agents:
-            scores = []
             for agent2 in agents:
-                if agent != agent2:
+                if agent != agent2 and (agent.name, agent2.name) not in played:
 
                     r = Topp.play_tournament(agent, agent2, no_games)
-                    scores.append(
-                        f"Won {len(results[results > 0])} / {no_games} agains {agent2.name}")
-
-            results[agent.name] = scores
+                    results[agent.name].append(
+                        f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}")
+                    results[agent2.name].append(
+                        f"Won {len(r[r < 0])} / {no_games} agains {agent.name}")
+                    played.append((agent.name, agent2.name))
+                    played.append((agent2.name, agent.name))
 
         for key, value in results.items():
-            print("Results for {key}: \n")
+            print(f"Results for {key}:")
             print(
-                "=============================================================================================")
+                "====================================================")
             for g in value:
                 print(g)
             print(
-                "=============================================================================================")
+                "====================================================\n")

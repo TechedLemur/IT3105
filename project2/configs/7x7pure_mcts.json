@@ -16,6 +16,11 @@
     "learning_rate": 0.02,
     "epsilon": 0.3,
     "epsilon_decay": 0.97,
+    "alpha": 0.5,
+    "start_temperature": 1,
+    "temperature_increase": 1.12,
+    "temperature_max": 7,
+    "anet_temperature": 3,
     "optimizer": "adam",
     "M": 5,
     "G": 50
