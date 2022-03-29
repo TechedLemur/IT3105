@@ -10,7 +10,7 @@
     "rollout_decay": 1.00,
     "reward_decay": 1.0,
     "input_planes": 9,
-    "padding" : 2,
+    "padding": 2,
     "layers": [],
     "activations": [],
     "learning_rate": 0.01,
@@ -23,5 +23,6 @@
     "anet_temperature": 2,
     "optimizer": "adam",
     "M": 5,
-    "G": 50
+    "G": 50,
+    "exploration_function": "puct"
 }

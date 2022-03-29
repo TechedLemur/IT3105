@@ -60,6 +60,8 @@ class Config:
         self.K = 5
         self.N = 5
 
+        self.exploration_function = c["exploration_function"]
+
 
 if sys.argv[1][-4:] == "json":
     cfg_file = sys.argv[1]

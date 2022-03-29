@@ -209,15 +209,19 @@ class MCTS:
         N_s_a = np.array([self.N_s_a[(node, a)] for a in node.children.keys()])
         Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
+        if cfg.exploration_function == "uct":
+            exp_bonus = MCTS.uct(self.N_s[node], N_s_a)
+        elif cfg.exploration_function == "puct":
+            exp_bonus = MCTS.puct(self.N_s[node], N_s_a, node.p)
         if node.state.player == 1:
             action_values = Q_s_a + \
-                MCTS.puct(self.N_s[node], N_s_a, node.p) * \
+                exp_bonus * \
                 int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.max(action_values))
         else:
             action_values = Q_s_a - \
-                MCTS.puct(self.N_s[node], N_s_a, node.p) * \
+                exp_bonus * \
                 int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.min(action_values))
