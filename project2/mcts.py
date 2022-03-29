@@ -1,3 +1,4 @@
+import datetime
 import random
 from typing import List, Optional, Tuple
 from config import cfg
@@ -14,6 +15,9 @@ from graphviz import Digraph
 from gameworlds.nim_world import NimWorld
 from gameworlds.hex_world import HexState
 
+
+def get_epochtime_ms():
+    return round(datetime.datetime.utcnow().timestamp() * 1000)
 
 class MCTSNode:
     """MCTSNode-class which represents a node in the MCTS-tree. This also represents a search state.
@@ -70,7 +74,7 @@ class MCTS:
         self.root = self.root.children[action]
         return action
 
-    def run_simulations(self, rollout_chance=cfg.rollout_chance) -> None:
+    def run_simulations(self, rollout_chance=cfg.rollout_chance, time_out=None) -> None:
         """Run M simulations from the current state.
         A simulation consists of:
         1. Applying tree policy to a leaf node.
@@ -78,10 +82,19 @@ class MCTS:
         3. Backpropagating the eval which updates N(s, a) and Q(s, a).
         """
 
+        if time_out:
+            start_time = get_epochtime_ms()
+
+
         self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
             lambda: np.zeros(cfg.search_games)
         )  # Represents the visits of arch on iteration i. (Using indice to get the ith visit count).
         for i in range(cfg.search_games):
+            if time_out:
+                end_time = get_epochtime_ms()
+                if end_time - start_time >= time_out:
+                    return
+
             self.visited: List[
                 Tuple[MCTSNode, Action]
             ] = []  # Visited nodes are appended here which is used during backpropagation
