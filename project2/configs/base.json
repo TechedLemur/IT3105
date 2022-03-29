@@ -23,5 +23,6 @@
     "anet_temperature": 5,
     "optimizer": "adam",
     "M": 1,
-    "G": 50
+    "G": 50,
+    "exploration_function": "uct"
 }
