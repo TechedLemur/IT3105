@@ -104,7 +104,7 @@ class ReinforcementLearningAgent:
         print(f"Game finished - used {t2-t1} seconds")
 
         y_train_value = winner * \
-            np.array(reward_factors)  # * 0.5 +0.5*np.array(Q) TODO: Fix q
+            np.array(reward_factors) * 0.5 + 0.5*np.array(Q)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
@@ -116,7 +116,7 @@ class ReinforcementLearningAgent:
             np.array(states),
         )
 
-    def train(self, file_suffix="", n_parallel=8, train_net=True):
+    def train(self, file_suffix="", n_parallel=8, train_net=True, train_interval=1):
         wins = []
 
         x_train = np.array([])
@@ -184,7 +184,7 @@ class ReinforcementLearningAgent:
                     y_train_value = np.concatenate((y_train_value, r[2]))
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
-            if train_net:
+            if train_net and (ep % train_interval == 0 or ep == cfg.episodes):
                 # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
@@ -192,7 +192,7 @@ class ReinforcementLearningAgent:
                     newest, batch_size, replace=False)
 
                 self.anet.train(x_train[ind], y_train[ind],
-                                y_train_value=y_train_value[ind], epochs=3)
+                                y_train_value=y_train_value[ind], epochs=2)
 
                 self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n

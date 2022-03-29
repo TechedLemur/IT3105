@@ -233,12 +233,13 @@ class ActorNet:
         return v[0][0].numpy()
 
     def train(
-        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5
+        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5, batch_size=128
     ):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
             epochs=epochs,
+            batch_size=batch_size
         )
 
     def save_params(self, i, suffix=""):
