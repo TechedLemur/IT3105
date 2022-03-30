@@ -1,3 +1,4 @@
+from copy import copy
 import datetime
 import random
 from typing import List, Optional, Tuple
@@ -13,11 +14,12 @@ from collections import defaultdict
 from graphviz import Digraph
 
 from gameworlds.nim_world import NimWorld
-from gameworlds.hex_world import HexState
+from gameworlds.hex_world import HexState, HexAction
 
 
 def get_epochtime_ms():
     return round(datetime.datetime.utcnow().timestamp() * 1000)
+
 
 class MCTSNode:
     """MCTSNode-class which represents a node in the MCTS-tree. This also represents a search state.
@@ -85,7 +87,6 @@ class MCTS:
         if time_out:
             start_time = get_epochtime_ms()
 
-
         self.d_s_a_i: defaultdict[tuple[MCTSNode, Action]] = defaultdict(
             lambda: np.zeros(cfg.search_games)
         )  # Represents the visits of arch on iteration i. (Using indice to get the ith visit count).
@@ -116,6 +117,30 @@ class MCTS:
 
                 self.V_i[self.iteration] = z
             self.backpropagate()
+
+    def get_node_from_state(self, state: State):
+
+        same = self.root.state.board == state.board
+        if np.all(same):
+            return self.root
+        else:
+            index = np.argwhere(same == False)[0]
+
+            action = HexAction(index[0], index[1])
+            # if not self.root.children:
+            #     for action in self.root.state.get_legal_actions():
+            #         self.root.children[action] = MCTSNode(
+            #             self.root, self.root.state.do_action(action)
+            #         )
+
+            n = self.root.children[action]
+
+            # if not n.children:
+            #     for action in state.get_legal_actions():
+            #         n.children[action] = MCTSNode(
+            #             n, state.do_action(action)
+            #         )
+            return n
 
     def backpropagate(self) -> None:
         """Backpropagate after a rollout from a leaf-node.
@@ -161,7 +186,7 @@ class MCTS:
             if random.random() <= cfg.random_rollout_move_p:
                 action = random.choice(legal_actions)
             else:
-                probs = self.actor.get_policy(self.current_world)
+                probs, forced_move = self.actor.get_policy(self.current_world)
                 alpha = cfg.alpha
                 d = np.random.dirichlet(alpha=[alpha]*len(probs))
                 e = cfg.epsilon  # TODO: Decay?
@@ -244,6 +269,7 @@ class MCTS:
 
         is_leaf_node = False
         current_node = self.root
+        self.current_world = self.root.state
         while not is_leaf_node:
             if not current_node.children:
                 is_leaf_node = True
@@ -305,6 +331,13 @@ class MCTS:
         # Make a distribution
         return (visit_counts / np.sum(visit_counts)).flatten(), q
 
+    def get_D(self):
+        visit_counts = np.zeros(len(self.root.children.keys()))
+        for i, a in enumerate(self.root.children.keys()):
+            visit_counts[i] = self.N_s_a[self.root, a]
+        # Make a distribution
+        return (visit_counts / np.sum(visit_counts))
+
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used
         for visualization purposes.
@@ -334,6 +367,9 @@ class MCTS:
                 )
                 nodes_to_visit.append(val)
         return dot
+
+    def copy(self):
+        return copy(self)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ from gameworlds.gameworld import State, Action, GameWorld
 from typing import List, Tuple
 import tensorflow as tf
 from tensorflow import keras
+from gameworlds.hex_world import HexState
 from tensorflow.keras import layers
 import numpy as np
 import random
@@ -176,7 +177,7 @@ class ActorNet:
             probs = np.zeros(len(legal_actions))
             probs[h] = 1
             probs = probs / np.sum(probs)
-            return probs
+            return probs, True
 
         prediction = self.policy(np.array([state.as_vector()]))
         probs = prediction[0].numpy().reshape(cfg.k, cfg.k)
@@ -186,7 +187,7 @@ class ActorNet:
         for i, a in enumerate(legal_actions):
             p[i] = probs[a.row, a.col]
 
-        return p / np.sum(p)
+        return p / np.sum(p), False
 
     def get_policy_and_reward(self, state: State, greedy=False):
 
@@ -218,18 +219,24 @@ class ActorNet:
         Returns list of indices of winning moves
         """
         winning = []
-
+        stop_opponent = []
         save_bridge = []
         save_bridge_options = state.as_vector()[:, :, 8]
+        opponent_turn = HexState(
+            board=state.board, player=-state.player, k=state.k, is_final_state=state.is_final_state)
         for i, a in enumerate(legal_actions):
             if state.do_action(a).is_final_state:
                 winning.append(i)
+            if opponent_turn.do_action(a).is_final_state:
+                stop_opponent.append(i)
             if save_bridge_options[a.row + cfg.padding, a.col+cfg.padding]:
                 save_bridge.append(i)
+
         if winning:
             return winning
-        else:
-            return save_bridge
+        elif stop_opponent:
+            return stop_opponent
+        return save_bridge
 
     def evaluate_state(self, state: State) -> float:
         # TODO: See if it makes sense to predict multiple states at the same time
