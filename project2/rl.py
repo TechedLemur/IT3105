@@ -11,6 +11,7 @@ from collections import deque
 import timeit
 from multiprocessing import Pool, cpu_count
 from datetime import datetime
+from topp import Topp
 
 
 class ReinforcementLearningAgent:
@@ -47,10 +48,10 @@ class ReinforcementLearningAgent:
             mcts.run_simulations(rollout_chance)
 
             if move == 1:
-                if random.random() <= 40:
+                if random.random() <= 0.05:
                     D = np.zeros((cfg.k, cfg.k))
-                    D[cfg.k//2, cfg.k//2] = 1 # Set middle move 1 
-                    q = 0.1 # Assuming starting player more likely to win 
+                    D[cfg.k//2, cfg.k//2] = 1  # Set middle move 1
+                    q = 0.1  # Assuming starting player more likely to win
                     D = D.flatten()
             # player = -player
                 else:
@@ -193,15 +194,30 @@ class ReinforcementLearningAgent:
                     y_train_value = np.concatenate((y_train_value, r[2]))
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
-            if train_net and (ep % train_interval == 0 or ep == cfg.episodes):
+            if train_net and ((ep % train_interval == 0 or ep == cfg.episodes) and ep > 0):
+                contender = ActorNet(self.anet.path)
+
+                contender.set_weights(self.anet.get_weights())
                 # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
-                ind = np.random.choice(
-                    newest, batch_size, replace=False)
+                for _ in range(3):
+                    ind = np.random.choice(
+                        newest, batch_size, replace=False)
 
-                self.anet.train(x_train[ind], y_train[ind],
-                                y_train_value=y_train_value[ind], epochs=2)
+                    contender.train(x_train[ind], y_train[ind],
+                                    y_train_value=y_train_value[ind], epochs=1)
+
+                results = Topp.play_tournament(
+                    contender, self.anet, no_games=100)
+                won = len(results[results > 0])
+                print(f"New model won {won} of 100 games.")
+
+                if won > 53:
+                    self.anet = contender
+                    print("Changing model")
+                else:
+                    print("Using old model")
 
                 self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n

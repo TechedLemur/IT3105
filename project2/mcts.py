@@ -4,7 +4,6 @@ import random
 from typing import List, Optional, Tuple
 from config import cfg
 import uuid
-
 import numpy as np
 from actor_net import ActorNet
 from gameworlds.gameworld import GameWorld
@@ -133,6 +132,8 @@ class MCTS:
             #             self.root, self.root.state.do_action(action)
             #         )
 
+            if action not in self.root.children:
+                return None
             n = self.root.children[action]
 
             # if not n.children:
