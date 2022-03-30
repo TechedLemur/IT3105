@@ -15,20 +15,20 @@ token = config['DEFAULT']['Token']
 # Import and override the `handle_get_action` hook in ActorClient
 
 # actor = ActorNet("./data/2022-03-28T18-29-14_7x7")
-actor = ActorNet()
+actor = ActorNet("./data/middle40")
 # TODO: Load params
-actor.load_params(80, "7x7")
+actor.load_params(8, "7x7")
 
 warmup = actor.model(np.zeros((2, 11, 11, 9)))
-state1 = HexState.empty_board(starting_player=1)
-state2 = HexState.empty_board(starting_player=-1)
+# state1 = HexState.empty_board(starting_player=1)
+# state2 = HexState.empty_board(starting_player=-1)
 
-mcts1 = MCTS(actor, state1)
-mcts2 = MCTS(actor, state2)
+# mcts1 = MCTS(actor, state1)
+# mcts2 = MCTS(actor, state2)
 
 # TODO: See if we can use a single tree
-mcts1.run_simulations(time_out=1000)
-mcts2.run_simulations(time_out=1000)
+# mcts1.run_simulations(time_out=10000)
+# mcts2.run_simulations(time_out=10000)
 
 # player1 = Player(actor, mcts1)
 # player2 = Player(actor, mcts2)
@@ -46,8 +46,8 @@ class MyClient(ActorClient):
 
         # D, q = self.mcts.get_visit_counts_from_root()
 
-        # a = actor.select_action(state, greedy=True)  # Your logic
-        a = self.player.get_action(state, timeout=600)
+        a = actor.select_action(state, greedy=True)  # Your logic
+        # a = self.player.get_action(state, timeout=2000)
         # all_actions = state.get_all_actions()
 
         # a = all_actions[np.argmax(D)]
@@ -59,11 +59,11 @@ class MyClient(ActorClient):
     def handle_game_start(self, start_player):
         super().handle_game_start(start_player)
 
-        if start_player == 1:
-            self.player = Player(actor, mcts1.copy())
+        # if start_player == 1:
+        # self.player = Player(actor, mcts1.copy())
 
-        else:
-            self.player = Player(actor, mcts2.copy())
+        # else:
+        # self.player = Player(actor, mcts2.copy())
 
     # Initialize and run your overridden client when the script is executed
 if __name__ == '__main__':
