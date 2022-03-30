@@ -219,11 +219,17 @@ class ActorNet:
         """
         winning = []
 
+        save_bridge = []
+        save_bridge_options = state.as_vector()[:, :, 8]
         for i, a in enumerate(legal_actions):
             if state.do_action(a).is_final_state:
                 winning.append(i)
-
-        return winning
+            if save_bridge_options[a.row + cfg.padding, a.col+cfg.padding]:
+                save_bridge.append(i)
+        if winning:
+            return winning
+        else:
+            return save_bridge
 
     def evaluate_state(self, state: State) -> float:
         # TODO: See if it makes sense to predict multiple states at the same time
