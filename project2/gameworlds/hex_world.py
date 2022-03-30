@@ -1,5 +1,4 @@
 from copy import copy
-from sklearn import neighbors
 from gameworlds.gameworld import GameWorld, State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
