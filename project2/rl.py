@@ -46,8 +46,17 @@ class ReinforcementLearningAgent:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
 
+            if move == 1:
+                if random.random() <= 40:
+                    D = np.zeros((cfg.k, cfg.k))
+                    D[cfg.k//2, cfg.k//2] = 1 # Set middle move 1 
+                    q = 0.1 # Assuming starting player more likely to win 
+                    D = D.flatten()
             # player = -player
-            D, q = mcts.get_visit_counts_from_root()
+                else:
+                    D, q = mcts.get_visit_counts_from_root()
+            else:
+                D, q = mcts.get_visit_counts_from_root()
 
             # print("D: ", D)
             # Decay rewards after each move

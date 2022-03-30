@@ -239,7 +239,7 @@ class ActorNet:
         return v[0][0].numpy()
 
     def train(
-        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5, batch_size=128
+        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5, batch_size=32
     ):
         self.model.fit(
             x=x_train,
