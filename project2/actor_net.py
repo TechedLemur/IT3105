@@ -30,19 +30,10 @@ class ActorNet:
                     64, kernel_size=(3 + cfg.padding), strides=1, padding="valid"
                 )(input_layer)
             else:
-                x = layers.Conv2D(64, 3, strides=1, padding="same")(input_layer)
+                x = layers.Conv2D(64, 3, strides=1,
+                                  padding="same")(input_layer)
             x = LeakyReLU()(x)
             x = layers.BatchNormalization()(x)
-            # x = layers.Flatten()(x)
-            # x = layers.Dense(100)(x)
-            # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
-            # x = keras.activations.relu(x)
-            # x = layers.BatchNormalization()(x)
-            # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
-            # x = keras.activations.relu(x)
-            # x = layers.BatchNormalization()(x)
-
-            # TODO: Add more layers? Resnet?
 
             x = self.residual_block(x, filters=64)
             x = self.residual_block(x, filters=64)
@@ -61,7 +52,8 @@ class ActorNet:
             z = layers.Flatten()(z)
             z = layers.Dense(50, activation="relu")(z)
 
-            value_output_layer = layers.Dense(1, activation=tf.nn.tanh, name="value")(z)
+            value_output_layer = layers.Dense(
+                1, activation=tf.nn.tanh, name="value")(z)
 
             self.policy = keras.Model(
                 input_layer, policy_output_layer, name="policy_model"
@@ -82,7 +74,8 @@ class ActorNet:
             }
             lossWeights = {"policy": 1.0, "value": 1.0}
             self.model.compile(
-                optimizer=keras.optimizers.Adam(learning_rate=cfg.learning_rate),
+                optimizer=keras.optimizers.Adam(
+                    learning_rate=cfg.learning_rate),
                 loss=losses,
                 loss_weights=lossWeights,
                 metrics=["accuracy"],
@@ -90,7 +83,8 @@ class ActorNet:
         elif cfg.network_type == "Dense":
             x = input_layer
             for layer in cfg.layers:
-                x = layers.Dense(layer["neurons"], activation=layer["activation"])(x)
+                x = layers.Dense(layer["neurons"],
+                                 activation=layer["activation"])(x)
 
             output_layer = layers.Dense(
                 cfg.output_dim, activation=tf.nn.softmax, name="policy"
@@ -163,13 +157,14 @@ class ActorNet:
         all_actions = world.get_all_actions()
 
         # Softmax output
-        probs = self.policy(np.array([world.as_vector()]))[0]
+        probs = self.policy(np.array([world.as_vector()]))[0].numpy()
 
-        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
-        # if world.player == -1:
-        # probs *= mask.reshape((world.k, world.k)).T.flatten()
-        # else:
-        # probs *= mask
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
+        if world.player == -1:
+            # Flip states
+            probs = probs.reshape((world.k, world.k)).T.flatten()
+
         probs *= mask
 
         probs = probs ** cfg.anet_temperature
@@ -208,6 +203,9 @@ class ActorNet:
 
         prediction = self.policy(np.array([state.as_vector()]))
         probs = prediction[0].numpy().reshape(cfg.k, cfg.k)
+
+        if state.player == -1:
+            probs = probs.T
 
         p = np.zeros(len(legal_actions))
 

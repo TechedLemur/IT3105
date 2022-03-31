@@ -27,10 +27,12 @@ class Topp:
                 state.plot(labels=False)
                 time.sleep(0.2)
             if state.player == 1:
-                move = player1.select_action(state, greedy=True, argmax=False)
+                move = player1.select_action(
+                    state, greedy=True, argmax=False, winning_heuristic=False)
 
             else:
-                move = player2.select_action(state, greedy=True, argmax=False)
+                move = player2.select_action(
+                    state, greedy=True, argmax=False, winning_heuristic=False)
 
             state = state.do_action(move)
         if plot:
@@ -42,23 +44,19 @@ class Topp:
     def play_tournament(player1: ActorNet, player2: ActorNet, no_games: int = 50, plot=False, verbose=False):
 
         results = np.zeros(no_games)
-        starting_player = 1
         if no_games % 2 != 0:
             raise Exception("Must be even number of games")
-        for i in range(no_games//2):  # |G|/2 games of a1 red
+        for i in range(no_games//2):  # |G|/2 games of a1 red starting
 
             winner = Topp.play_single_game(
-                player1, player2, starting_player, plot)
+                player1, player2, starting_player=1, plot=plot)
             results[i] = winner
 
-            starting_player *= -1
-        for i in range(no_games//2, no_games):  # |G|/2 games of a2 red
+        for i in range(no_games//2, no_games):  # |G|/2 games of a2 red starting
 
             winner = Topp.play_single_game(
-                player2, player1, starting_player, plot)
-            results[i] = -winner
-
-            starting_player *= -1
+                player1, player2, starting_player=-1, plot=plot)
+            results[i] = winner
 
         if verbose:
             print(
@@ -78,17 +76,17 @@ class Topp:
 
                     r = Topp.play_tournament(agent, agent2, no_games)
                     results[agent.name].append(
-                        f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}")
+                        f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}. As starting {len(r[:no_games//2][r[:no_games//2] > 0])} / {no_games//2}, as second {len(r[no_games//2:][r[no_games//2:] > 0])} / {no_games//2}")
                     results[agent2.name].append(
-                        f"Won {len(r[r < 0])} / {no_games} agains {agent.name}")
+                        f"Won {len(r[r < 0])} / {no_games} agains {agent.name}. As starting {len(r[:no_games//2][r[:no_games//2] < 0])} / {no_games//2}, as second {len(r[no_games//2:][r[no_games//2:] < 0])} / {no_games//2}")
                     played.append((agent.name, agent2.name))
                     played.append((agent2.name, agent.name))
 
         for key, value in results.items():
             print(f"Results for {key}:")
             print(
-                "====================================================")
+                "================================================================")
             for g in value:
                 print(g)
             print(
-                "====================================================\n")
+                "================================================================\n")

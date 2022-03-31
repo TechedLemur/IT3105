@@ -39,12 +39,12 @@ class Config:
         self.network_type = c["network_type"]
         if self.network_type == "Dense":
             self.mode = 0
-            self.input_dim = 2*(self.k ** 2)
+            self.input_dim = 3*(self.k ** 2)
         elif self.network_type == "CNN":
             self.mode = 2
             self.input_dim = (self.k + 2 * self.padding,
-            self.k + 2 * self.padding,
-            c["input_planes"],)
+                              self.k + 2 * self.padding,
+                              c["input_planes"],)
 
         self.output_dim = self.k ** 2
         self.layers = c["layers"]
@@ -78,10 +78,10 @@ class Config:
         self.layers = c["layers"]
 
 
-if sys.argv[1][-4:] == "json":
-    cfg_file = sys.argv[1]
-else:
-    cfg_file = "demo.json"
+# if sys.argv[1][-4:] == "json":
+#     cfg_file = sys.argv[1]
+# else:
+cfg_file = "demo.json"
 
 print("Config file: ", cfg_file)
 cfg = Config(cfg_file)

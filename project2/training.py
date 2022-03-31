@@ -10,7 +10,7 @@ import shutil
 
 if __name__ == "__main__":
 
-    start_model = "model87x7"
+    start_model = None
 
     suffix = f"{cfg.k}x{cfg.k}"
     timestamp = datetime.now().isoformat()[:19]
@@ -33,14 +33,14 @@ if __name__ == "__main__":
         path=path, starting_model_path=start_model)
     print("Starting training")
     rlAgent.train(file_suffix=suffix, n_parallel=1,
-                  train_net=True, train_interval=4)
+                  train_net=True, train_interval=1)
 
     print(f"Saving {len(rlAgent.x_train)} cases")
 
     with open(f"{path}/{timestamp}_{suffix}.npy", "wb") as f:
         np.save(f, rlAgent.states)
         np.save(f, rlAgent.y_train)
-        np.save(f, rlAgent.y_train_value)
+        # np.save(f, rlAgent.y_train_value)
 
     shutil.copyfile(f"./configs/{cfg_file}", f"{path}/{cfg_file}")
 

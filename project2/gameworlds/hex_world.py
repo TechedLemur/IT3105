@@ -97,11 +97,13 @@ def generate_bridge_dict(K=cfg.k):
             up = ((row - 1, col), (row, col - 1), (row - 1, col - 1))
 
             up_right = ((row + 1, col - 1), (row, col - 1), (row + 1, col - 2))
-            down_right = ((row + 1, col - 1), (row + 1, col), (row + 2, col - 1))
+            down_right = ((row + 1, col - 1),
+                          (row + 1, col), (row + 2, col - 1))
 
             down = ((row + 1, col), (row, col + 1), (row + 1, col + 1))
 
-            down_left = ((row, col + 1), (row - 1, col + 1), (row - 1, col + 2))
+            down_left = ((row, col + 1), (row - 1, col + 1),
+                         (row - 1, col + 2))
             up_left = ((row - 1, col + 1), (row - 1, col), (row - 2, col + 1))
 
             patterns = [up, up_right, up_left, down, down_left, down_right]
@@ -323,11 +325,11 @@ class HexState(State):
                 board = -self.board.T  # Transpose and swap colors
             for p in board.flatten():
                 if p == 1:
-                    vector.extend([1, 0])
+                    vector.extend([1, 0, 0])
                 elif p == -1:
-                    vector.extend([0, 1])
+                    vector.extend([0, 1, 0])
                 else:
-                    vector.extend([0, 0])
+                    vector.extend([0, 0, 1])
             return np.array(vector)
 
         if cfg.mode == 1:
@@ -377,13 +379,15 @@ class HexState(State):
                                 if b_copy[i, j] == 1:
                                     # Player 1 bridge endpoint
                                     player1_endpoint[i, j] = max(
-                                        player1_endpoint[i, j], b_copy[endpoint] >= 0
+                                        player1_endpoint[i,
+                                                         j], b_copy[endpoint] >= 0
                                     )
                             elif b_copy[carrier1] != -1 and b_copy[carrier2] != -1:
                                 if b_copy[i, j] == -1:
                                     # player 2 bridge endpoint
                                     player2_endpoint[i, j] = max(
-                                        player2_endpoint[i, j], b_copy[endpoint] <= 0
+                                        player2_endpoint[i,
+                                                         j], b_copy[endpoint] <= 0
                                     )
                         if b_copy[i, j] == p:
                             if b_copy[carrier1] == 0 and b_copy[carrier2] == 0:
@@ -457,13 +461,14 @@ class HexState(State):
             else:
                 edgemap.append("black")
 
-        #clear_output(wait=True)
+        clear_output(wait=True)
         plt.figure(figsize=(10, 10))
         seed = 8
         if k == 5:
             seed = 10
         pos = nx.spring_layout(G, seed=seed)
-        nx.draw(G, pos=pos, node_color=colormap, node_size=400, edge_color=edgemap)
+        nx.draw(G, pos=pos, node_color=colormap,
+                node_size=400, edge_color=edgemap)
         if labels:
             nx.draw_networkx_labels(G, pos, verticalalignment="center")
         plt.show()
