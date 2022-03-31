@@ -1,8 +1,17 @@
 import json
 import sys
+from tensorflow import keras
 
 
 class Config:
+
+    optimizer_dict = {
+        "adam": keras.optimizers.Adam,
+        "sgd": keras.optimizers.SGD,
+        "adagrad": keras.optimizers.Adagrad,
+        "rmsprop": keras.optimizers.RMSprop,
+    }
+
     def __init__(self, config_name):
         with open(f"configs/{config_name}") as f:
             c = json.load(f)
@@ -26,15 +35,19 @@ class Config:
 
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
-        self.padding = c["padding"]
-        self.input_shape = (
+        self.network_type = c["network_type"]
+        if self.network_type == "Dense":
+            self.mode = 0
+            self.input_dim = 2*(self.k ** 2)
+        elif self.network_type == "CNN":
+            self.mode = 2
+            self.input_dim = (self.k + 2 * self.padding,
             self.k + 2 * self.padding,
-            self.k + 2 * self.padding,
-            c["input_planes"],
-        )
-        self.output_length = self.k * self.k
-        self.layers = []
-        self.activations = []
+            c["input_planes"],)
+
+        self.output_dim = self.k ** 2
+        self.layers = c["layers"]
+
         self.learning_rate = c["learning_rate"]
         self.epsilon = c["epsilon"]
         self.epsilon_decay = c["epsilon_decay"]
@@ -47,7 +60,7 @@ class Config:
         self.anet_temperature = c["anet_temperature"]
         # The optimizer in the ANET, with (at least) the following options all available: Adagrad, Stochastic Gradient
         # Descent (SGD), RMSProp, and Adam.
-        self.optimizer = c["optimizer"]
+        self.optimizer = Config.optimizer_dict[c["optimizer"]]
 
         # The number (M) of ANETs to be cached in preparation for a TOPP. These should be cached, starting with an
         # untrained net prior to episode 1, at a fixed interval throughout the training episodes.
@@ -61,12 +74,13 @@ class Config:
         self.N = 5
 
         self.exploration_function = c["exploration_function"]
+        self.layers = c["layers"]
 
 
 if sys.argv[1][-4:] == "json":
     cfg_file = sys.argv[1]
 else:
-    cfg_file = "base.json"
+    cfg_file = "demo.json"
 
 print("Config file: ", cfg_file)
 cfg = Config(cfg_file)

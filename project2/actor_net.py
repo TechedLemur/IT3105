@@ -9,7 +9,8 @@ import random
 from config import cfg
 import os
 from keras.layers.advanced_activations import LeakyReLU
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    # Disable gpu
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable gpu
 
 
 class ActorNet:
@@ -17,72 +18,92 @@ class ActorNet:
     Neural network actor
     """
 
-    def __init__(
-        self, path: str = ".", input_shape=cfg.input_shape, output_dim=cfg.output_length, weight_path=None
-    ) -> None:
+    def __init__(self, path: str = ".", weight_path=None) -> None:
 
         self.path = path
-        input_layer = keras.Input(shape=input_shape, name="Input")
-        if cfg.padding:
-            x = layers.Conv2D(64, kernel_size=(3+cfg.padding), strides=1,
-                              padding='valid')(input_layer)
-        else:
-            x = layers.Conv2D(64, 3, strides=1, padding='same')(input_layer)
-        x = LeakyReLU()(x)
-        x = layers.BatchNormalization()(x)
-        # x = layers.Flatten()(x)
-        # x = layers.Dense(100)(x)
-        # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
-        # x = keras.activations.relu(x)
-        # x = layers.BatchNormalization()(x)
-        # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
-        # x = keras.activations.relu(x)
-        # x = layers.BatchNormalization()(x)
 
-        # TODO: Add more layers? Resnet?
+        input_layer = keras.Input(shape=cfg.input_dim, name="Input")
 
-        x = self.residual_block(x, filters=64)
-        x = self.residual_block(x, filters=64)
+        if cfg.network_type == "CNN":
+            if cfg.padding:
+                x = layers.Conv2D(
+                    64, kernel_size=(3 + cfg.padding), strides=1, padding="valid"
+                )(input_layer)
+            else:
+                x = layers.Conv2D(64, 3, strides=1, padding="same")(input_layer)
+            x = LeakyReLU()(x)
+            x = layers.BatchNormalization()(x)
+            # x = layers.Flatten()(x)
+            # x = layers.Dense(100)(x)
+            # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+            # x = keras.activations.relu(x)
+            # x = layers.BatchNormalization()(x)
+            # x = layers.Conv2D(64, 3, strides=1, padding='same')(x)
+            # x = keras.activations.relu(x)
+            # x = layers.BatchNormalization()(x)
 
-        y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        y = LeakyReLU()(y)
-        y = layers.BatchNormalization()(y)
-        y = layers.Flatten()(y)
-        policy_output_layer = layers.Dense(
-            output_dim, activation=tf.nn.softmax, name="policy"
-        )(y)
+            # TODO: Add more layers? Resnet?
 
-        z = layers.Conv2D(1, 1, strides=1, padding='same')(x)
-        z = LeakyReLU()(z)
-        z = layers.BatchNormalization()(z)
-        z = layers.Flatten()(z)
-        z = layers.Dense(50, activation="relu")(z)
+            x = self.residual_block(x, filters=64)
+            x = self.residual_block(x, filters=64)
 
-        value_output_layer = layers.Dense(
-            1, activation=tf.nn.tanh, name="value")(z)
+            y = layers.Conv2D(1, 1, strides=1, padding="same")(x)
+            y = LeakyReLU()(y)
+            y = layers.BatchNormalization()(y)
+            y = layers.Flatten()(y)
+            policy_output_layer = layers.Dense(
+                cfg.output_dim, activation=tf.nn.softmax, name="policy"
+            )(y)
 
-        self.policy = keras.Model(
-            input_layer, policy_output_layer, name="policy_model")
-        self.value = keras.Model(
-            input_layer, value_output_layer, name="value_model")
+            z = layers.Conv2D(1, 1, strides=1, padding="same")(x)
+            z = LeakyReLU()(z)
+            z = layers.BatchNormalization()(z)
+            z = layers.Flatten()(z)
+            z = layers.Dense(50, activation="relu")(z)
 
-        self.model = keras.Model(
-            inputs=input_layer,
-            outputs=[policy_output_layer, value_output_layer],
-            name="2HNET",
-        )
+            value_output_layer = layers.Dense(1, activation=tf.nn.tanh, name="value")(z)
 
-        losses = {
-            "policy": "categorical_crossentropy",
-            "value": "mse",
-        }
-        lossWeights = {"policy": 1.0, "value": 1.0}
-        self.model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=cfg.learning_rate),
-            loss=losses,
-            loss_weights=lossWeights,
-            metrics=["accuracy"],
-        )
+            self.policy = keras.Model(
+                input_layer, policy_output_layer, name="policy_model"
+            )
+            self.value = keras.Model(
+                input_layer, value_output_layer, name="value_model"
+            )
+
+            self.model = keras.Model(
+                inputs=input_layer,
+                outputs=[policy_output_layer, value_output_layer],
+                name="2HNET",
+            )
+
+            losses = {
+                "policy": "categorical_crossentropy",
+                "value": "mse",
+            }
+            lossWeights = {"policy": 1.0, "value": 1.0}
+            self.model.compile(
+                optimizer=keras.optimizers.Adam(learning_rate=cfg.learning_rate),
+                loss=losses,
+                loss_weights=lossWeights,
+                metrics=["accuracy"],
+            )
+        elif cfg.network_type == "Dense":
+            x = input_layer
+            for layer in cfg.layers:
+                x = layers.Dense(layer["neurons"], activation=layer["activation"])(x)
+
+            output_layer = layers.Dense(
+                cfg.output_dim, activation=tf.nn.softmax, name="policy"
+            )(x)
+
+            self.model = keras.Model(input_layer, output_layer)
+
+            self.model.compile(
+                optimizer=cfg.optimizer(learning_rate=cfg.learning_rate),
+                loss="categorical_crossentropy",
+                metrics=["accuracy"],
+            )
+            self.policy = self.model
 
         if weight_path:
             self.model.load_weights(weight_path)
@@ -92,8 +113,9 @@ class ActorNet:
 
     @staticmethod
     def residual_block(x, filters: int, kernel_size=3):
-        y = layers.Conv2D(kernel_size=kernel_size,
-                          filters=filters, strides=1, padding='same')(x)
+        y = layers.Conv2D(
+            kernel_size=kernel_size, filters=filters, strides=1, padding="same"
+        )(x)
         y = LeakyReLU()(y)
         y = layers.BatchNormalization()(y)
 
@@ -119,19 +141,23 @@ class ActorNet:
         if self.epsilon < 0.0001:
             self.epsilon = 0
 
-    def select_action(self, world: State, greedy=False, argmax=False) -> Action:
+    def select_action(
+        self, world: State, greedy=False, argmax=False, winning_heuristic=False
+    ) -> Action:
         """
         Select an action based on the state.
         """
 
         legal_actions = world.get_legal_actions()
-        h = self.winning_heuristic(world, legal_actions)
 
-        if h:
-            return legal_actions[random.choice(h)]
+        if winning_heuristic:
+            h = self.winning_heuristic(world, legal_actions)
 
-        if random.random() < self.epsilon and not greedy:
-            return random.choice(legal_actions)
+            if h:
+                return legal_actions[random.choice(h)]
+
+            if random.random() < self.epsilon and not greedy:
+                return random.choice(legal_actions)
 
         # A list with all possible actions in the game (legal and not)
         all_actions = world.get_all_actions()
@@ -139,8 +165,7 @@ class ActorNet:
         # Softmax output
         probs = self.policy(np.array([world.as_vector()]))[0]
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
         # if world.player == -1:
         # probs *= mask.reshape((world.k, world.k)).T.flatten()
         # else:
@@ -165,19 +190,21 @@ class ActorNet:
         # new_action = new_action.transposed()
         return new_action
 
-    def get_policy(self, state):
+    def get_policy(self, state, winning_heuristic=False):
         """
-        Returns a list of 
+        Returns a list of
         """
         legal_actions = state.get_legal_actions()
 
-        h = self.winning_heuristic(state, legal_actions)
+        if winning_heuristic:
 
-        if h:
-            probs = np.zeros(len(legal_actions))
-            probs[h] = 1
-            probs = probs / np.sum(probs)
-            return probs, True
+            h = self.winning_heuristic(state, legal_actions)
+
+            if h:
+                probs = np.zeros(len(legal_actions))
+                probs[h] = 1
+                probs = probs / np.sum(probs)
+                return probs, True
 
         prediction = self.policy(np.array([state.as_vector()]))
         probs = prediction[0].numpy().reshape(cfg.k, cfg.k)
@@ -189,19 +216,22 @@ class ActorNet:
 
         return p / np.sum(p), False
 
-    def get_policy_and_reward(self, state: State, greedy=False):
+    def get_policy_and_reward(self, state: State, greedy=False, winning_heuristic=False):
 
         legal_actions = state.get_legal_actions()
 
-        h = self.winning_heuristic(state, legal_actions)
 
-        if h:
-            probs = np.zeros(len(legal_actions))
-            probs[h] = 1
-            probs = probs / np.sum(probs)
-            return probs, state.player
+        if winning_heuristic:
+            h = self.winning_heuristic(state, legal_actions)
+
+            if h:
+                probs = np.zeros(len(legal_actions))
+                probs[h] = 1
+                probs = probs / np.sum(probs)
+                return probs, state.player
 
         prediction = self.model(np.array([state.as_vector()]))
+
         probs = prediction[0][0].numpy().reshape(cfg.k, cfg.k)
         value = prediction[1][0][0].numpy()
 
@@ -223,13 +253,17 @@ class ActorNet:
         save_bridge = []
         save_bridge_options = state.as_vector()[:, :, 8]
         opponent_turn = HexState(
-            board=state.board, player=-state.player, k=state.k, is_final_state=state.is_final_state)
+            board=state.board,
+            player=-state.player,
+            k=state.k,
+            is_final_state=state.is_final_state,
+        )
         for i, a in enumerate(legal_actions):
             if state.do_action(a).is_final_state:
                 winning.append(i)
             if opponent_turn.do_action(a).is_final_state:
                 stop_opponent.append(i)
-            if save_bridge_options[a.row + cfg.padding, a.col+cfg.padding]:
+            if save_bridge_options[a.row + cfg.padding, a.col + cfg.padding]:
                 save_bridge.append(i)
 
         if winning:
@@ -246,13 +280,18 @@ class ActorNet:
         return v[0][0].numpy()
 
     def train(
-        self, x_train: np.array, y_train: np.array, y_train_value: np.array, epochs=5, batch_size=32
+        self,
+        x_train: np.array,
+        y_train: np.array,
+        y_train_value: np.array,
+        epochs=5,
+        batch_size=32,
     ):
         self.model.fit(
             x=x_train,
             y={"policy": y_train, "value": y_train_value},
             epochs=epochs,
-            batch_size=batch_size
+            batch_size=batch_size,
         )
 
     def save_params(self, i, suffix=""):

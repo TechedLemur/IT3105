@@ -94,22 +94,27 @@ def generate_bridge_dict(K=cfg.k):
     for row in range(K):
         for col in range(K):
 
-            up = ((row-1, col), (row, col-1), (row-1, col-1))
+            up = ((row - 1, col), (row, col - 1), (row - 1, col - 1))
 
-            up_right = ((row+1, col-1), (row, col-1), (row+1, col-2))
-            down_right = ((row+1, col-1), (row+1, col), (row+2, col-1))
+            up_right = ((row + 1, col - 1), (row, col - 1), (row + 1, col - 2))
+            down_right = ((row + 1, col - 1), (row + 1, col), (row + 2, col - 1))
 
-            down = ((row+1, col), (row, col+1), (row+1, col+1))
+            down = ((row + 1, col), (row, col + 1), (row + 1, col + 1))
 
-            down_left = ((row, col+1), (row - 1, col+1), (row-1, col+2))
-            up_left = ((row-1, col+1), (row - 1, col), (row-2, col+1))
+            down_left = ((row, col + 1), (row - 1, col + 1), (row - 1, col + 2))
+            up_left = ((row - 1, col + 1), (row - 1, col), (row - 2, col + 1))
 
             patterns = [up, up_right, up_left, down, down_left, down_right]
 
             b = []
             for pattern in patterns:
                 bridge_endpoint = pattern[2]
-                if bridge_endpoint[0] >= 0 and bridge_endpoint[1] >= 0 and bridge_endpoint[0] < K and bridge_endpoint[1] < K:
+                if (
+                    bridge_endpoint[0] >= 0
+                    and bridge_endpoint[1] >= 0
+                    and bridge_endpoint[0] < K
+                    and bridge_endpoint[1] < K
+                ):
                     b.append(pattern)
 
             bridges[(row, col)] = b
@@ -119,7 +124,9 @@ def generate_bridge_dict(K=cfg.k):
 bridges = generate_bridge_dict()
 
 
-def is_final_move(move: Tuple[int, int], player=1, k=cfg.k, board: np.ndarray = None) -> bool:
+def is_final_move(
+    move: Tuple[int, int], player=1, k=cfg.k, board: np.ndarray = None
+) -> bool:
     """
     Returns True if the move is a winning move for the player, False otherwise.
     Do a breadth-first search from the placed piece, and see if the two edges for the player is connected.
@@ -301,13 +308,13 @@ class HexState(State):
             ),
         )
 
-    def as_vector(self, mode=2):
+    def as_vector(self):
         """
         Returns the game state as a vector intended to use as input for the ANET.
 
         """
         if (
-            mode == 0
+            cfg.mode == 0
         ):  # Basic, we want the network to see the game same way regardless of which player we are, so we transpose the board if the player is -1.
             vector = []
             if self.player == 1:
@@ -323,7 +330,7 @@ class HexState(State):
                     vector.extend([0, 0])
             return np.array(vector)
 
-        if mode == 1:
+        if cfg.mode == 1:
             # kxkx4 array, 0: player 1 stones, 1: player 2 stones: 3: empty stones: 4: 1 if player 1,0 if player 2
             array = np.zeros((self.k, self.k, 4))
 
@@ -333,13 +340,13 @@ class HexState(State):
             array[:, :, 3] = self.player == 1
             return array
 
-        if mode == 2:  # gao-2017 encoding
+        if cfg.mode == 2:  # gao-2017 encoding
 
-            array = np.zeros((self.k+4, self.k+4, 9))
+            array = np.zeros((self.k + 4, self.k + 4, 9))
             p = self.player
             b_copy = self.board.copy()
 
-            b = np.pad(b_copy, 2, mode='constant', constant_values=(-1))
+            b = np.pad(b_copy, 2, mode="constant", constant_values=(-1))
 
             b[0:2] = 1
             b[-2:] = 1
@@ -370,28 +377,33 @@ class HexState(State):
                                 if b_copy[i, j] == 1:
                                     # Player 1 bridge endpoint
                                     player1_endpoint[i, j] = max(
-                                        player1_endpoint[i, j], b_copy[endpoint] >= 0)
+                                        player1_endpoint[i, j], b_copy[endpoint] >= 0
+                                    )
                             elif b_copy[carrier1] != -1 and b_copy[carrier2] != -1:
                                 if b_copy[i, j] == -1:
                                     # player 2 bridge endpoint
-                                    player2_endpoint[i, j] = max(player2_endpoint[i, j],
-                                                                 b_copy[endpoint] <= 0)
+                                    player2_endpoint[i, j] = max(
+                                        player2_endpoint[i, j], b_copy[endpoint] <= 0
+                                    )
                         if b_copy[i, j] == p:
                             if b_copy[carrier1] == 0 and b_copy[carrier2] == 0:
                                 # Form bridge
                                 form_bridge[endpoint] = max(
-                                    form_bridge[endpoint], b_copy[endpoint] == 0)
+                                    form_bridge[endpoint], b_copy[endpoint] == 0
+                                )
 
                             # Save bridge
 
                             if b_copy[carrier1] != 0 and b_copy[carrier2] == 0:
                                 if b_copy[carrier1] != p:
                                     save_bridge[carrier2] = max(
-                                        save_bridge[carrier2], b_copy[endpoint] == p)
+                                        save_bridge[carrier2], b_copy[endpoint] == p
+                                    )
                             if b_copy[carrier1] == 0 and b_copy[carrier2] != 0:
                                 if b_copy[carrier2] != p:
                                     save_bridge[carrier1] = max(
-                                        save_bridge[carrier1], b_copy[endpoint] == p)
+                                        save_bridge[carrier1], b_copy[endpoint] == p
+                                    )
 
             # player 1 bridge endpoints
             array[:, :, 5] = np.pad(player1_endpoint, 2)
@@ -410,8 +422,8 @@ class HexState(State):
         return arr
 
     @staticmethod
-    def from_array_to_vector(array, mode=2):
-        return HexState.from_array(array).as_vector(mode=mode)
+    def from_array_to_vector(array):
+        return HexState.from_array(array).as_vector()
 
     def plot(self, labels: bool = False):
 
@@ -451,8 +463,7 @@ class HexState(State):
         if k == 5:
             seed = 10
         pos = nx.spring_layout(G, seed=seed)
-        nx.draw(G, pos=pos, node_color=colormap,
-                node_size=400, edge_color=edgemap)
+        nx.draw(G, pos=pos, node_color=colormap, node_size=400, edge_color=edgemap)
         if labels:
             nx.draw_networkx_labels(G, pos, verticalalignment="center")
         plt.show()

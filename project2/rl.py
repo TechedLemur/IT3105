@@ -16,8 +16,7 @@ from topp import Topp
 
 class ReinforcementLearningAgent:
     def __init__(self, path: str, starting_model_path=None):
-        self.anet = ActorNet(path, cfg.input_shape,
-                             cfg.output_length, starting_model_path)
+        self.anet = ActorNet(path, starting_model_path)
         self.path = path
 
     @staticmethod
@@ -50,10 +49,10 @@ class ReinforcementLearningAgent:
             if move == 1:
                 if random.random() <= 0.05:
                     D = np.zeros((cfg.k, cfg.k))
-                    D[cfg.k//2, cfg.k//2] = 1  # Set middle move 1
+                    D[cfg.k // 2, cfg.k // 2] = 1  # Set middle move 1
                     q = 0.1  # Assuming starting player more likely to win
                     D = D.flatten()
-            # player = -player
+                # player = -player
                 else:
                     D, q = mcts.get_visit_counts_from_root()
             else:
@@ -106,15 +105,15 @@ class ReinforcementLearningAgent:
             world = world.do_action(action)
             mcts.root = mcts.root.children[action]
             move += 1
-            temperature = min(cfg.temperature_max,
-                              temperature*cfg.temperature_increase)
+            temperature = min(
+                cfg.temperature_max, temperature * cfg.temperature_increase
+            )
         t2 = timeit.default_timer()
         winner = -world.player
 
         print(f"Game finished - used {t2-t1} seconds")
 
-        y_train_value = winner * \
-            np.array(reward_factors) * 0.5 + 0.5*np.array(Q)
+        y_train_value = winner * np.array(reward_factors) * 0.5 + 0.5 * np.array(Q)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
@@ -143,7 +142,8 @@ class ReinforcementLearningAgent:
         n = min(n_parallel, cpu_count())
 
         print(
-            f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}")
+            f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}"
+        )
 
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
@@ -194,22 +194,26 @@ class ReinforcementLearningAgent:
                     y_train_value = np.concatenate((y_train_value, r[2]))
                     states = np.concatenate((states, r[4]))
                 wins.append(starting_player == r[3])
-            if train_net and ((ep % train_interval == 0 or ep == cfg.episodes) and ep > 0):
+            if train_net and (
+                (ep % train_interval == 0 or ep == cfg.episodes) and ep > 0
+            ):
                 contender = ActorNet(self.anet.path)
 
                 contender.set_weights(self.anet.get_weights())
                 # Select batch from newes cases
-                newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
+                newest = np.arange(len(x_train))[-cfg.replay_buffer_size :]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
                 for _ in range(3):
-                    ind = np.random.choice(
-                        newest, batch_size, replace=False)
+                    ind = np.random.choice(newest, batch_size, replace=False)
 
-                    contender.train(x_train[ind], y_train[ind],
-                                    y_train_value=y_train_value[ind], epochs=1)
+                    contender.train(
+                        x_train[ind],
+                        y_train[ind],
+                        y_train_value=y_train_value[ind],
+                        epochs=1,
+                    )
 
-                results = Topp.play_tournament(
-                    contender, self.anet, no_games=100)
+                results = Topp.play_tournament(contender, self.anet, no_games=100)
                 won = len(results[results > 0])
                 print(f"New model won {won} of 100 games.")
 
