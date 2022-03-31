@@ -2,12 +2,12 @@
     "k": 3,
     "mini_batch_size": 500,
     "replay_buffer_size": 1000,
-    "episodes": 1,
+    "episodes": 100,
     "search_games": 300,
     "c": 1.0,
     "random_rollout_move_p": 0.1,
     "rollout_chance": 1.0,
-    "rollout_decay": 0.9,
+    "rollout_decay": 1.0,
     "reward_decay": 0.4,
     "network_type": "Dense",
     "layers": [
@@ -25,7 +25,7 @@
     "temperature_max": 7,
     "anet_temperature": 5,
     "optimizer": "adam",
-    "M": 1,
+    "M": 5,
     "G": 50,
     "exploration_function": "uct"
 }

@@ -197,31 +197,17 @@ class ReinforcementLearningAgent:
             if train_net and (
                 (ep % train_interval == 0 or ep == cfg.episodes) and ep > 0
             ):
-                contender = ActorNet(self.anet.path)
-
-                contender.set_weights(self.anet.get_weights())
                 # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size :]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
-                for _ in range(3):
-                    ind = np.random.choice(newest, batch_size, replace=False)
+                ind = np.random.choice(newest, batch_size, replace=False)
 
-                    contender.train(
-                        x_train[ind],
-                        y_train[ind],
-                        y_train_value=y_train_value[ind],
-                        epochs=1,
-                    )
-
-                results = Topp.play_tournament(contender, self.anet, no_games=100)
-                won = len(results[results > 0])
-                print(f"New model won {won} of 100 games.")
-
-                if won > 53:
-                    self.anet = contender
-                    print("Changing model")
-                else:
-                    print("Using old model")
+                self.anet.train(
+                    x_train[ind],
+                    y_train[ind],
+                    y_train_value=y_train_value[ind],
+                    epochs=1,
+                )
 
                 self.anet.update_epsilon(n=n)
             rollout_chance *= cfg.rollout_decay ** n

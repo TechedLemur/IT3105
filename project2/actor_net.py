@@ -216,10 +216,11 @@ class ActorNet:
 
         return p / np.sum(p), False
 
-    def get_policy_and_reward(self, state: State, greedy=False, winning_heuristic=False):
+    def get_policy_and_reward(
+        self, state: State, greedy=False, winning_heuristic=False
+    ):
 
         legal_actions = state.get_legal_actions()
-
 
         if winning_heuristic:
             h = self.winning_heuristic(state, legal_actions)
@@ -287,12 +288,17 @@ class ActorNet:
         epochs=5,
         batch_size=32,
     ):
-        self.model.fit(
-            x=x_train,
-            y={"policy": y_train, "value": y_train_value},
-            epochs=epochs,
-            batch_size=batch_size,
-        )
+        if cfg.network_type == "Dense":
+            self.model.fit(
+                x=x_train, y=y_train, epochs=epochs, batch_size=batch_size,
+            )
+        elif cfg.network_type == "CNN":
+            self.model.fit(
+                x=x_train,
+                y={"policy": y_train, "value": y_train_value},
+                epochs=epochs,
+                batch_size=batch_size,
+            )
 
     def save_params(self, i, suffix=""):
         self.model.save_weights(f"{self.path}/models/model{i}{suffix}")
