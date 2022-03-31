@@ -63,6 +63,12 @@ class ReinforcementLearningAgent:
             reward_factors = [x * cfg.reward_decay for x in reward_factors]
             state = mcts.root.state
             D_matrix = D.reshape((state.k, state.k))
+            print("Move: ", move)
+            print(D_matrix)
+            world.plot()
+            graph = mcts.draw_graph()
+            graph.render(f"mcts-graphs/graph{move}")
+
 
             states.append(state.to_array())
             # Add training cases, and their symmetric versions
@@ -197,7 +203,7 @@ class ReinforcementLearningAgent:
             if train_net and (
                 (ep % train_interval == 0 or ep == cfg.episodes) and ep > 0
             ):
-                # Select batch from newes cases
+                # Select batch from newest cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size :]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
                 ind = np.random.choice(newest, batch_size, replace=False)

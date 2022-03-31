@@ -457,7 +457,7 @@ class HexState(State):
             else:
                 edgemap.append("black")
 
-        clear_output(wait=True)
+        #clear_output(wait=True)
         plt.figure(figsize=(10, 10))
         seed = 8
         if k == 5:

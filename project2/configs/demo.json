@@ -2,8 +2,8 @@
     "k": 3,
     "mini_batch_size": 500,
     "replay_buffer_size": 1000,
-    "episodes": 100,
-    "search_games": 300,
+    "episodes": 1,
+    "search_games": 1000,
     "c": 1.0,
     "random_rollout_move_p": 0.1,
     "rollout_chance": 1.0,
@@ -11,12 +11,12 @@
     "reward_decay": 0.4,
     "network_type": "Dense",
     "layers": [
-        { "activation": "relu", "neurons": 30 },
-        { "activation": "relu", "neurons": 30 },
-        { "activation": "relu", "neurons": 30 }
+        { "activation": "relu", "neurons": 32 },
+        { "activation": "relu", "neurons": 64 },
+        { "activation": "relu", "neurons": 128 }
     ],
     "padding": 2,
-    "learning_rate": 0.001,
+    "learning_rate": 0.005,
     "epsilon": 0.2,
     "epsilon_decay": 0.97,
     "alpha": 0.5,
@@ -25,7 +25,7 @@
     "temperature_max": 7,
     "anet_temperature": 5,
     "optimizer": "adam",
-    "M": 5,
+    "M": 1,
     "G": 50,
     "exploration_function": "uct"
 }

@@ -58,8 +58,7 @@ class MCTS:
     def __init__(self, actor, state: State) -> None:
         self.root: MCTSNode = MCTSNode(None, state)
         self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
-        self.N_s_a: defaultdict[tuple[MCTSNode,
-                                      Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
@@ -95,6 +94,7 @@ class MCTS:
                 if end_time - start_time >= time_out:
                     return
 
+            self.amaf_action_pair: List[Tuple[int, Action]] = []
             self.visited: List[
                 Tuple[MCTSNode, Action]
             ] = []  # Visited nodes are appended here which is used during backpropagation
@@ -109,13 +109,14 @@ class MCTS:
                 if not is_finished:
                     p, z = self.actor.get_policy_and_reward(leaf_node.state)
                     alpha = cfg.alpha  # Should be about 10 / #moves
-                    d = np.random.dirichlet(alpha=[alpha]*len(p))
+                    d = np.random.dirichlet(alpha=[alpha] * len(p))
                     e = cfg.epsilon  # TODO: Decay?
-                    noisy_p = (1-e)*p + e * d  # Dirichlet Noise
+                    noisy_p = (1 - e) * p + e * d  # Dirichlet Noise
                     leaf_node.p = noisy_p
 
                 self.V_i[self.iteration] = z
             self.backpropagate()
+            self.amaf_update()
 
     def get_node_from_state(self, state: State):
 
@@ -154,7 +155,7 @@ class MCTS:
         """
 
         for node, action in self.visited:
-            self.d_s_a_i[(node, action)][self.iteration] = 1
+            self.d_s_a_i[(node, action)][self.iteration] += 1
             self.N_s[node] += 1
 
             self.N_s_a[(node, action)] = sum(self.d_s_a_i[(node, action)])
@@ -166,6 +167,12 @@ class MCTS:
 
     def decay_rollout_chance(self):
         self.rollout_p *= cfg.rollout_decay
+
+    def amaf_update(self):
+        for player, action in self.amaf_action_pair:
+            for node, _ in self.visited:
+                if node.parent != None and action in node.parent.children.keys() and node.parent.state.player == player:
+                    self.d_s_a_i[(node, action)][self.iteration] += 1
 
     def do_rollout(self, start_node: MCTSNode, add_rollout_nodes_to_tree=False) -> None:
         """Do a rollout from a leaf-node until a final state is found.
@@ -184,14 +191,15 @@ class MCTS:
         while not game_finished:
 
             legal_actions = self.current_world.get_legal_actions()
+
             if random.random() <= cfg.random_rollout_move_p:
                 action = random.choice(legal_actions)
             else:
                 probs, forced_move = self.actor.get_policy(self.current_world)
                 alpha = cfg.alpha
-                d = np.random.dirichlet(alpha=[alpha]*len(probs))
+                d = np.random.dirichlet(alpha=[alpha] * len(probs))
                 e = cfg.epsilon  # TODO: Decay?
-                noisy_p = (1-e)*probs + e * d
+                noisy_p = (1 - e) * probs + e * d
                 if it == 0:
                     start_node.p = noisy_p
                 action = np.random.choice(legal_actions, p=noisy_p)
@@ -199,7 +207,9 @@ class MCTS:
             # The start-node is the leaf-node which should be regarded as visited.
             if it == 0:
                 self.visited.append((start_node, action))
+            self.amaf_action_pair.append((self.current_world.player, action))
             new_state = self.current_world.do_action(action)
+
 
             if add_rollout_nodes_to_tree:
                 self.visited.append((current_node, action))
@@ -248,17 +258,11 @@ class MCTS:
         elif cfg.exploration_function == "puct":
             exp_bonus = MCTS.puct(self.N_s[node], N_s_a, node.p)
         if node.state.player == 1:
-            action_values = Q_s_a + \
-                exp_bonus * \
-                int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(
-                action_values == np.max(action_values))
+            action_values = Q_s_a + exp_bonus * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(action_values == np.max(action_values))
         else:
-            action_values = Q_s_a - \
-                exp_bonus * \
-                int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(
-                action_values == np.min(action_values))
+            action_values = Q_s_a - exp_bonus * int(apply_exploraty_bonus)
+            max_indices = np.flatnonzero(action_values == np.min(action_values))
 
         # Choose randomly between the best choices (if they have equal values)
         return list(node.children.keys())[np.random.choice(max_indices)]
@@ -281,6 +285,7 @@ class MCTS:
                 is_leaf_node = True
                 break
             best_action = self.tree_policy(current_node)
+            self.amaf_action_pair.append((self.current_world.player, best_action))
             self.current_world = self.current_world.do_action(best_action)
             self.visited.append((current_node, best_action))
             current_node = current_node.children[best_action]
@@ -302,7 +307,7 @@ class MCTS:
         Returns:
             np.array: UCT-calculation.
         """
-        return cfg.c * np.sqrt(np.log(1+N_s) / (1 + N_s_a))
+        return cfg.c * np.sqrt(np.log(1 + N_s) / (1 + N_s_a))
 
     @staticmethod
     def puct(N_s: int, N_s_a: np.array, p: np.array) -> np.array:
@@ -342,7 +347,7 @@ class MCTS:
         for i, a in enumerate(self.root.children.keys()):
             visit_counts[i] = self.N_s_a[self.root, a]
         # Make a distribution
-        return (visit_counts / np.sum(visit_counts))
+        return visit_counts / np.sum(visit_counts)
 
     def draw_graph(self) -> Digraph:
         """Generate a digraph of the current tree which can be used

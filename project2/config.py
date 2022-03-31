@@ -35,6 +35,7 @@ class Config:
 
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
+        self.padding = c["padding"]
         self.network_type = c["network_type"]
         if self.network_type == "Dense":
             self.mode = 0
