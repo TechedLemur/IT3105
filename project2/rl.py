@@ -65,7 +65,7 @@ class ReinforcementLearningAgent:
             D_matrix = D.reshape((state.k, state.k))
             #print("Move: ", move)
             #print(D_matrix)
-            world.plot()
+            #world.plot()
             #graph = mcts.draw_graph()
             #graph.render(f"mcts-graphs/graph{move}")
 
