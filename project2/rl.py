@@ -63,11 +63,11 @@ class ReinforcementLearningAgent:
             reward_factors = [x * cfg.reward_decay for x in reward_factors]
             state = mcts.root.state
             D_matrix = D.reshape((state.k, state.k))
-            print("Move: ", move)
-            print(D_matrix)
+            #print("Move: ", move)
+            #print(D_matrix)
             world.plot()
-            graph = mcts.draw_graph()
-            graph.render(f"mcts-graphs/graph{move}")
+            #graph = mcts.draw_graph()
+            #graph.render(f"mcts-graphs/graph{move}")
 
 
             states.append(state.to_array())
