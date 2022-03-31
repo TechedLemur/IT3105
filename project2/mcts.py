@@ -232,6 +232,14 @@ class MCTS:
             Action: Best action according to the UCT-calculation.
         """
 
+        game_ending_actions = []
+        for a, c in node.children.items():
+            final, val = c.is_final_state()
+            if final and val == self.root.state.player:
+                game_ending_actions.append(a)
+        if game_ending_actions:
+            return random.choice(game_ending_actions)
+
         N_s_a = np.array([self.N_s_a[(node, a)] for a in node.children.keys()])
         Q_s_a = np.array([self.Q[(node, a)] for a in node.children.keys()])
 
@@ -251,9 +259,6 @@ class MCTS:
                 int(apply_exploraty_bonus)
             max_indices = np.flatnonzero(
                 action_values == np.min(action_values))
-
-        # if not max_indices.any():
-            # return random.choice(list(node.children.keys()))
 
         # Choose randomly between the best choices (if they have equal values)
         return list(node.children.keys())[np.random.choice(max_indices)]
