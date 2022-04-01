@@ -301,7 +301,7 @@ class HexState(State):
             ),
         )
 
-    def as_vector(self, mode=2):
+    def as_vector(self, mode=cfg.mode):
         """
         Returns the game state as a vector intended to use as input for the ANET.
 
@@ -410,8 +410,8 @@ class HexState(State):
         return arr
 
     @staticmethod
-    def from_array_to_vector(array, mode=2):
-        return HexState.from_array(array).as_vector(mode=mode)
+    def from_array_to_vector(array):
+        return HexState.from_array(array).as_vector()
 
     def plot(self, labels: bool = False):
 

@@ -33,6 +33,7 @@ class ReinforcementLearningAgent:
             anet = ActorNet()
             anet.set_weights(anet_weigths)
             anet.epsilon = epsilon
+            anet.update_lite_model()
 
         mcts = MCTS(anet, world)
         move = 1
@@ -46,9 +47,8 @@ class ReinforcementLearningAgent:
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
-
             if move == 1:
-                if random.random() <= 0.05:
+                if random.random() <= 0.02:
                     D = np.zeros((cfg.k, cfg.k))
                     D[cfg.k//2, cfg.k//2] = 1  # Set middle move 1
                     q = 0.1  # Assuming starting player more likely to win
@@ -108,6 +108,7 @@ class ReinforcementLearningAgent:
             move += 1
             temperature = min(cfg.temperature_max,
                               temperature*cfg.temperature_increase)
+
         t2 = timeit.default_timer()
         winner = -world.player
 
@@ -141,7 +142,7 @@ class ReinforcementLearningAgent:
         starting_player = 1
 
         n = min(n_parallel, cpu_count())
-
+        self.anet.update_lite_model()
         print(
             f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}")
 
@@ -206,7 +207,7 @@ class ReinforcementLearningAgent:
                         newest, batch_size, replace=False)
 
                     contender.train(x_train[ind], y_train[ind],
-                                    y_train_value=y_train_value[ind], epochs=1)
+                                    y_train_value=y_train_value[ind], epochs=1, batch_size=32)
 
                 results = Topp.play_tournament(
                     contender, self.anet, no_games=100)
@@ -215,11 +216,13 @@ class ReinforcementLearningAgent:
 
                 if won > 53:
                     self.anet = contender
+                    self.anet.update_lite_model()
                     print("Changing model")
                 else:
                     print("Using old model")
 
                 self.anet.update_epsilon(n=n)
+
             rollout_chance *= cfg.rollout_decay ** n
             starting_player *= -1
         wins = np.array(wins).astype(np.float32)

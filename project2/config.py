@@ -57,6 +57,11 @@ class Config:
         # play of the TOPP.
         self.G = c["G"]
 
+        if self.padding > 0:
+            self.mode = 2
+        else:
+            self.mode = 1
+
         self.K = 5
         self.N = 5
 
