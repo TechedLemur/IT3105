@@ -154,7 +154,7 @@ class MCTS:
         """
 
         for node, action in self.visited:
-            self.d_s_a_i[(node, action)][self.iteration] = 1
+            self.d_s_a_i[(node, action)][self.iteration] += 1
             self.N_s[node] += 1
 
             self.N_s_a[(node, action)] = sum(self.d_s_a_i[(node, action)])
@@ -166,6 +166,12 @@ class MCTS:
 
     def decay_rollout_chance(self):
         self.rollout_p *= cfg.rollout_decay
+
+    def amaf_update(self):
+        for player, action in self.amaf_action_pair:
+            for node, _ in self.visited:
+                if node.parent != None and action in node.parent.children.keys() and node.parent.state.player == player:
+                    self.d_s_a_i[(node, action)][self.iteration] += 1
 
     def do_rollout(self, start_node: MCTSNode, add_rollout_nodes_to_tree=False) -> None:
         """Do a rollout from a leaf-node until a final state is found.
