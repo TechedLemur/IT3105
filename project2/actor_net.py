@@ -157,13 +157,10 @@ class ActorNet:
         all_actions = world.get_all_actions()
 
         # Softmax output
-        probs = self.policy(np.array([world.as_vector()]))[0].numpy()
+        probs = self.policy(np.array([world.as_vector()]))[0]
 
         mask = np.array(
             [a in legal_actions for a in all_actions]).astype(np.float32)
-        if world.player == -1:
-            # Flip states
-            probs = probs.reshape((world.k, world.k)).T.flatten()
 
         probs *= mask
 
@@ -191,18 +188,18 @@ class ActorNet:
         """
         legal_actions = state.get_legal_actions()
 
-        if winning_heuristic:
+        # if winning_heuristic:
 
-            h = self.winning_heuristic(state, legal_actions)
+        #     h = self.winning_heuristic(state, legal_actions)
 
-            if h:
-                probs = np.zeros(len(legal_actions))
-                probs[h] = 1
-                probs = probs / np.sum(probs)
-                return probs, True
+        #     if h:
+        #         probs = np.zeros(len(legal_actions))
+        #         probs[h] = 1
+        #         probs = probs / np.sum(probs)
+        #         return probs, True
 
-        prediction = self.policy(np.array([state.as_vector()]))
-        probs = prediction[0].numpy().reshape(cfg.k, cfg.k)
+        prediction = self.lite_model.predict(np.array([state.as_vector()]))
+        probs = prediction[0].reshape(cfg.k, cfg.k)
 
         if state.player == -1:
             probs = probs.T
@@ -229,7 +226,7 @@ class ActorNet:
                 probs = probs / np.sum(probs)
                 return probs, state.player
 
-        prediction = self.model(np.array([state.as_vector()]))
+        prediction = self.lite_model.predict(np.array([state.as_vector()]))
 
         probs = prediction[0][0].numpy().reshape(cfg.k, cfg.k)
         value = prediction[1][0][0].numpy()
@@ -303,3 +300,56 @@ class ActorNet:
 
     def load_params(self, i, suffix=""):
         self.model.load_weights(f"{self.path}/models/model{i}{suffix}")
+
+    def update_lite_model(self):
+        self.lite_model = LiteModel.from_keras_model(self.model)
+
+
+class LiteModel:
+
+    @classmethod
+    def from_file(cls, model_path):
+        return LiteModel(tf.lite.Interpreter(model_path=model_path))
+
+    @classmethod
+    def from_keras_model(cls, kmodel):
+        converter = tf.lite.TFLiteConverter.from_keras_model(kmodel)
+        tflite_model = converter.convert()
+        return LiteModel(tf.lite.Interpreter(model_content=tflite_model))
+
+    def __init__(self, interpreter):
+        self.interpreter = interpreter
+        self.interpreter.allocate_tensors()
+        input_det = self.interpreter.get_input_details()[0]
+        output_det = self.interpreter.get_output_details()
+        self.input_index = input_det["index"]
+        self.v_output_index = output_det[0]["index"]
+        self.p_output_index = output_det[1]["index"]
+        self.input_shape = input_det["shape"]
+        self.v_output_shape = output_det[0]["shape"]
+        self.p_output_shape = output_det[1]["shape"]
+        self.input_dtype = input_det["dtype"]
+        self.v_output_dtype = output_det[0]["dtype"]
+        self.p_output_dtype = output_det[1]["dtype"]
+
+    def predict(self, inp):
+        inp = inp.astype(self.input_dtype)
+        count = inp.shape[0]
+        v_out = np.zeros(
+            (count, self.v_output_shape[1]), dtype=self.v_output_dtype)
+        p_out = np.zeros(
+            (count, self.p_output_shape[1]), dtype=self.p_output_dtype)
+        for i in range(count):
+            self.interpreter.set_tensor(self.input_index, inp[i:i+1])
+            self.interpreter.invoke()
+            v_out[i] = self.interpreter.get_tensor(self.v_output_index)[0]
+            p_out[i] = self.interpreter.get_tensor(self.p_output_index)[0]
+        return p_out, v_out
+
+    def predict_single(self, inp):
+        """ Like predict(), but only for a single record. The input data can be a Python list. """
+        inp = np.array([inp], dtype=self.input_dtype)
+        self.interpreter.set_tensor(self.input_index, inp)
+        self.interpreter.invoke()
+        out = self.interpreter.get_tensor(self.output_index)
+        return out[0]

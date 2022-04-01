@@ -58,7 +58,8 @@ class MCTS:
     def __init__(self, actor, state: State) -> None:
         self.root: MCTSNode = MCTSNode(None, state)
         self.Q: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
-        self.N_s_a: defaultdict[tuple[MCTSNode, Action], int] = defaultdict(int)
+        self.N_s_a: defaultdict[tuple[MCTSNode,
+                                      Action], int] = defaultdict(int)
         self.N_s: defaultdict[MCTSNode, int] = defaultdict(int)
         self.V_i = np.zeros(cfg.search_games)
         self.actor = actor
@@ -210,7 +211,6 @@ class MCTS:
             self.amaf_action_pair.append((self.current_world.player, action))
             new_state = self.current_world.do_action(action)
 
-
             if add_rollout_nodes_to_tree:
                 self.visited.append((current_node, action))
                 if action not in current_node.children.keys():
@@ -259,10 +259,12 @@ class MCTS:
             exp_bonus = MCTS.puct(self.N_s[node], N_s_a, node.p)
         if node.state.player == 1:
             action_values = Q_s_a + exp_bonus * int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(action_values == np.max(action_values))
+            max_indices = np.flatnonzero(
+                action_values == np.max(action_values))
         else:
             action_values = Q_s_a - exp_bonus * int(apply_exploraty_bonus)
-            max_indices = np.flatnonzero(action_values == np.min(action_values))
+            max_indices = np.flatnonzero(
+                action_values == np.min(action_values))
 
         # Choose randomly between the best choices (if they have equal values)
         return list(node.children.keys())[np.random.choice(max_indices)]
@@ -285,7 +287,8 @@ class MCTS:
                 is_leaf_node = True
                 break
             best_action = self.tree_policy(current_node)
-            self.amaf_action_pair.append((self.current_world.player, best_action))
+            self.amaf_action_pair.append(
+                (self.current_world.player, best_action))
             self.current_world = self.current_world.do_action(best_action)
             self.visited.append((current_node, best_action))
             current_node = current_node.children[best_action]

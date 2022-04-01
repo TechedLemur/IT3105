@@ -16,7 +16,7 @@ from topp import Topp
 
 class ReinforcementLearningAgent:
     def __init__(self, path: str, starting_model_path=None):
-        self.anet = ActorNet(path, starting_model_path)
+        self.anet = ActorNet(path, weight_path=starting_model_path)
         self.path = path
 
     @staticmethod
@@ -32,32 +32,68 @@ class ReinforcementLearningAgent:
             anet = ActorNet()
             anet.set_weights(anet_weigths)
             anet.epsilon = epsilon
+            anet.update_lite_model()
 
         mcts = MCTS(anet, world)
         move = 1
         x_train = []
         y_train = []
         states = []
+        reward_factors = []
+        Q = []
         all_actions = world.get_all_actions()
         temperature = cfg.start_temperature
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
+            if move == 1:
+                if random.random() <= 0.02:
+                    D = np.zeros((cfg.k, cfg.k))
+                    D[cfg.k//2, cfg.k//2] = 1  # Set middle move 1
+                    q = 0.1  # Assuming starting player more likely to win
+                    D = D.flatten()
+            # player = -player
+                else:
+                    D, q = mcts.get_visit_counts_from_root()
+            else:
+                D, q = mcts.get_visit_counts_from_root()
 
-            # if move == 1:
-            #     if random.random() <= 0.05:
-            #         D = np.zeros((cfg.k, cfg.k))
-            #         D[cfg.k // 2, cfg.k // 2] = 1  # Set middle move 1
-            #         q = 0.1  # Assuming starting player more likely to win
-            #         D = D.flatten()
-            #     # player = -player
-            #     else:
-            #         D, q = mcts.get_visit_counts_from_root()
-            # else:
-            D_matrix = mcts.get_visit_counts_from_root()
+            # print("D: ", D)
+            # Decay rewards after each move
+            reward_factors = [x * cfg.reward_decay for x in reward_factors]
             state = mcts.root.state
+            D_matrix = D.reshape((state.k, state.k))
 
-            probs = D_matrix.flatten() ** temperature
+            states.append(state.to_array())
+            # Add training cases, and their symmetric versions
+            x_train.append(state.as_vector())
+            y_train.append(D)
+            reward_factors.append(1)
+            Q.append(q)
+
+            inverted = state.inverted()
+            x_train.append(inverted.as_vector())
+            y_train.append(D_matrix.T.flatten())
+            reward_factors.append(-1)
+            Q.append(-q)
+            states.append(inverted.to_array())
+
+            rot, invRot = state.rotate180()
+
+            x_train.append(rot.as_vector())
+            y_train.append(np.rot90(D_matrix, 2).flatten())
+            reward_factors.append(1)
+            Q.append(q)
+            states.append(rot.to_array())
+
+            x_train.append(invRot.as_vector())
+            y_train.append(np.rot90(D_matrix.T, 2).flatten())
+            reward_factors.append(-1)
+            Q.append(-q)
+            states.append(invRot.to_array())
+            # Choose actual move (a*) based on D
+
+            probs = D ** temperature
             probs = probs / np.sum(probs)
             # Round to avoid floating point error
             probs = np.around(probs, 3)
@@ -68,46 +104,24 @@ class ReinforcementLearningAgent:
 
             world = world.do_action(action)
             mcts.root = mcts.root.children[action]
-
-            # print("D: ", D)
-            # Decay rewards after each move
-
-            #print("Move: ", move)
-            # print(D_matrix)
-            # world.plot()
-            #graph = mcts.draw_graph()
-            # graph.render(f"mcts-graphs/graph{move}")
-            if state.player == -1:
-                D_matrix = D_matrix.T
-
-            D = D_matrix.flatten()
-
-            states.append(state.to_array())
-            # Add training cases, and their symmetric versions
-            x_train.append(state.as_vector())
-            y_train.append(D)
-
-            rot, invRot = state.rotate180()
-
-            x_train.append(rot.as_vector())
-            y_train.append(np.rot90(D_matrix, 2).flatten())
-            states.append(rot.to_array())
-
             move += 1
-            temperature = min(
-                cfg.temperature_max, temperature * cfg.temperature_increase
-            )
+            temperature = min(cfg.temperature_max,
+                              temperature*cfg.temperature_increase)
+
         t2 = timeit.default_timer()
         winner = -world.player
 
         print(f"Game finished - used {t2-t1} seconds")
 
+        y_train_value = winner * \
+            np.array(reward_factors) * 0.5 + 0.5*np.array(Q)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
         return (
             np.array(x_train),
             np.array(y_train),
+            y_train_value,
             winner,
             np.array(states),
         )
@@ -127,10 +141,9 @@ class ReinforcementLearningAgent:
         starting_player = 1
 
         n = min(n_parallel, cpu_count())
-
+        self.anet.update_lite_model()
         print(
-            f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}"
-        )
+            f"Running {cfg.episodes} episodes with {cfg.search_games} search games, {file_suffix}")
 
         for ep in range(cfg.episodes):
             print(f"Episode {ep}")
@@ -173,28 +186,42 @@ class ReinforcementLearningAgent:
                 if not x_train.size:
                     x_train = r[0]
                     y_train = r[1]
-                    states = r[3]
+                    y_train_value = r[2]
+                    states = r[4]
                 else:
                     x_train = np.concatenate((x_train, r[0]))
                     y_train = np.concatenate((y_train, r[1]))
-                    states = np.concatenate((states, r[3]))
-                wins.append(starting_player == r[2])
-            if train_net and (
-                (ep % train_interval == 0 or ep == cfg.episodes-1) and ep > 0
-            ):
-                # Select batch from newest cases
+                    y_train_value = np.concatenate((y_train_value, r[2]))
+                    states = np.concatenate((states, r[4]))
+                wins.append(starting_player == r[3])
+            if train_net and ((ep % train_interval == 0 or ep == cfg.episodes) and ep > 0):
+                contender = ActorNet(self.anet.path)
+
+                contender.set_weights(self.anet.get_weights())
+                # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
-                ind = np.random.choice(newest, batch_size, replace=False)
+                for _ in range(3):
+                    ind = np.random.choice(
+                        newest, batch_size, replace=False)
 
-                self.anet.train(
-                    x_train[ind],
-                    y_train[ind],
-                    y_train_value=None,
-                    epochs=1,
-                )
+                    contender.train(x_train[ind], y_train[ind],
+                                    y_train_value=y_train_value[ind], epochs=1, batch_size=32)
 
-                # self.anet.update_epsilon(n=n)
+                results = Topp.play_tournament(
+                    contender, self.anet, no_games=100)
+                won = len(results[results > 0])
+                print(f"New model won {won} of 100 games.")
+
+                if won > 53:
+                    self.anet = contender
+                    self.anet.update_lite_model()
+                    print("Changing model")
+                else:
+                    print("Using old model")
+
+                self.anet.update_epsilon(n=n)
+
             rollout_chance *= cfg.rollout_decay ** n
             starting_player *= -1
         wins = np.array(wins).astype(np.float32)
@@ -204,4 +231,5 @@ class ReinforcementLearningAgent:
         )
         self.x_train = x_train
         self.y_train = y_train
+        self.y_train_value = y_train_value
         self.states = states
