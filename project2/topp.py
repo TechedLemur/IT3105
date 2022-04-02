@@ -52,7 +52,7 @@ class Topp:
                 player1, player2, starting_player=1, plot=plot)
             results[i] = winner
 
-        for i in range(no_games//2, no_games):  # |G|/2 games of a2 red starting
+        for i in range(no_games//2, no_games):  # |G|/2 games of a2 blue starting
 
             winner = Topp.play_single_game(
                 player1, player2, starting_player=-1, plot=plot)

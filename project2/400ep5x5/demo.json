@@ -1,0 +1,33 @@
+{
+    "k": 5,
+    "mini_batch_size": 1100,
+    "replay_buffer_size": 2500,
+    "episodes": 40,
+    "search_games": 1300,
+    "c": 1.5,
+    "random_rollout_move_p": 0.01,
+    "rollout_chance": 1,
+    "rollout_decay": 0.95,
+    "reward_decay": 1,
+    "network_type": "CNN",
+    "layers": [
+        { "activation": "elu", "neurons": 400 },
+        { "activation": "elu", "neurons": 300 },
+        { "activation": "elu", "neurons": 200 },
+        { "activation": "elu", "neurons": 100 }
+    ],
+    "padding": 2,
+    "learning_rate": 0.01,
+    "input_planes":9,
+    "epsilon": 0.25,
+    "epsilon_decay": 0.97,
+    "alpha": 0.5,
+    "start_temperature": 1,
+    "temperature_increase": 1.1,
+    "temperature_max": 7,
+    "anet_temperature": 3.5,
+    "optimizer": "adam",
+    "M": 5,
+    "G": 50,
+    "exploration_function": "puct"
+}

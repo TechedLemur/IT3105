@@ -228,8 +228,8 @@ class ActorNet:
 
         prediction = self.lite_model.predict(np.array([state.as_vector()]))
 
-        probs = prediction[0][0].numpy().reshape(cfg.k, cfg.k)
-        value = prediction[1][0][0].numpy()
+        probs = prediction[0][0].reshape(cfg.k, cfg.k)
+        value = prediction[1][0][0]
 
         p = np.zeros(len(legal_actions))
 

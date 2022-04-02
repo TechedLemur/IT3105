@@ -114,7 +114,7 @@ class ReinforcementLearningAgent:
         print(f"Game finished - used {t2-t1} seconds")
 
         y_train_value = winner * \
-            np.array(reward_factors) * 0.5 + 0.5*np.array(Q)
+            np.array(reward_factors)  # * 0.5 + 0.5*np.array(Q)
         # the critic can be trained by using the score obtained at the end of each
         # actual game (i.e. episode) as the target value for backpropagation, wherein the net receives each state of the recent
         # episode as input and tries to map that state to the target (or a discounted version of the target)
@@ -201,12 +201,12 @@ class ReinforcementLearningAgent:
                 # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
-                for _ in range(3):
+                for _ in range(8):
                     ind = np.random.choice(
                         newest, batch_size, replace=False)
 
                     contender.train(x_train[ind], y_train[ind],
-                                    y_train_value=y_train_value[ind], epochs=1, batch_size=32)
+                                    y_train_value=y_train_value[ind], epochs=1, batch_size=24)
 
                 results = Topp.play_tournament(
                     contender, self.anet, no_games=100)

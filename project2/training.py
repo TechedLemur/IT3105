@@ -40,7 +40,7 @@ if __name__ == "__main__":
     with open(f"{path}/{timestamp}_{suffix}.npy", "wb") as f:
         np.save(f, rlAgent.states)
         np.save(f, rlAgent.y_train)
-        # np.save(f, rlAgent.y_train_value)
+        np.save(f, rlAgent.y_train_value)
 
     shutil.copyfile(f"./configs/{cfg_file}", f"{path}/{cfg_file}")
 
