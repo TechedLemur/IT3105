@@ -41,8 +41,8 @@ class ActorNet:
 
         # TODO: Add more layers? Resnet?
 
-        x = self.residual_block(x, filters=64)
-        x = self.residual_block(x, filters=64)
+        for _ in range(20):
+            x = self.residual_block(x, filters=64)
 
         y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
         y = LeakyReLU()(y)
@@ -167,7 +167,7 @@ class ActorNet:
 
     def get_policy(self, state):
         """
-        Returns a list of 
+        Returns a list of
         """
         legal_actions = state.get_legal_actions()
 

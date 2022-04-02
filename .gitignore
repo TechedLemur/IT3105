@@ -5,6 +5,7 @@ __pycache__/
 
 /project2/credentials.json
 /project2/settings.yaml
+/project2/mcts-graphs
 
 /mcts-graphs
 # C extensions
