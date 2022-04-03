@@ -285,17 +285,13 @@ class ActorNet:
         epochs=5,
         batch_size=32,
     ):
-        if cfg.network_type == "Dense":
-            self.model.fit(
-                x=x_train, y=y_train, epochs=epochs, batch_size=batch_size,
-            )
-        elif cfg.network_type == "CNN":
-            self.model.fit(
-                x=x_train,
-                y={"policy": y_train, "value": y_train_value},
-                epochs=epochs,
-                batch_size=batch_size,
-            )
+
+        self.model.fit(
+            x=x_train,
+            y={"policy": y_train, "value": y_train_value},
+            epochs=epochs,
+            batch_size=batch_size,
+        )
 
     def save_params(self, i, suffix=""):
         self.model.save_weights(f"{self.path}/models/model{i}{suffix}")
