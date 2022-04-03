@@ -253,6 +253,8 @@ class MCTS:
             exp_bonus = MCTS.uct(self.N_s[node], N_s_a)
         elif cfg.exploration_function == "puct":
             exp_bonus = MCTS.puct(self.N_s[node], N_s_a, node.p)
+        else:
+            exp_bonus = MCTS.puct(self.N_s[node], N_s_a, node.p) * 0.4 + MCTS.uct(self.N_s[node], N_s_a) * 0.6
         if node.state.player == 1:
             action_values = Q_s_a + \
                 exp_bonus * \

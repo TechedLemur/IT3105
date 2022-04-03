@@ -68,10 +68,10 @@ class Config:
         self.exploration_function = c["exploration_function"]
 
 
-if sys.argv[1][-4:] == "json":
-    cfg_file = sys.argv[1]
-else:
-    cfg_file = "base.json"
+# if sys.argv[1][-4:] == "json":
+#     cfg_file = sys.argv[1]
+# else:
+cfg_file = "7x7zero.json"
 
 print("Config file: ", cfg_file)
 cfg = Config(cfg_file)

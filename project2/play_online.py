@@ -15,9 +15,9 @@ token = config['DEFAULT']['Token']
 # Import and override the `handle_get_action` hook in ActorClient
 
 # actor = ActorNet("./data/2022-03-28T18-29-14_7x7")
-actor = ActorNet("./data/middle40")
+actor = ActorNet(weight_path="./97score/super_model")
 # TODO: Load params
-actor.load_params(8, "7x7")
+# actor.load_params(199, "7x7")
 
 warmup = actor.model(np.zeros((2, 11, 11, 9)))
 # state1 = HexState.empty_board(starting_player=1)
@@ -68,5 +68,5 @@ class MyClient(ActorClient):
     # Initialize and run your overridden client when the script is executed
 if __name__ == '__main__':
     client = MyClient(auth=token)
-    # client.run(mode='league')
-    client.run()
+    client.run(mode='league')
+    # client.run()

@@ -202,19 +202,19 @@ class ReinforcementLearningAgent:
                 # Select batch from newes cases
                 newest = np.arange(len(x_train))[-cfg.replay_buffer_size:]
                 batch_size = min(cfg.mini_batch_size, len(x_train))
-                for _ in range(3):
+                for _ in range(5):
                     ind = np.random.choice(
                         newest, batch_size, replace=False)
 
                     contender.train(x_train[ind], y_train[ind],
-                                    y_train_value=y_train_value[ind], epochs=1, batch_size=32)
+                                    y_train_value=y_train_value[ind], epochs=1, batch_size=28)
 
                 results = Topp.play_tournament(
                     contender, self.anet, no_games=100)
                 won = len(results[results > 0])
                 print(f"New model won {won} of 100 games.")
 
-                if won > 53:
+                if won >= 53:
                     self.anet = contender
                     self.anet.update_lite_model()
                     print("Changing model")
