@@ -9,12 +9,20 @@
     "rollout_chance": 1,
     "rollout_decay": 0.95,
     "reward_decay": 1,
-    "network_type": "CNN",
-    "layers": [
-        { "activation": "elu", "neurons": 400 },
-        { "activation": "elu", "neurons": 300 },
-        { "activation": "elu", "neurons": 200 },
-        { "activation": "elu", "neurons": 100 }
+    
+    "pre_block_layers" : [
+        {"activation": "leaky_relu", "filters":64, "kernel_size":5}
+    ],
+    "residual_blocks" : [
+        {"activation": "leaky_relu", "filters":64, "kernel_size":3},
+        {"activation": "leaky_relu", "filters":64, "kernel_size":3}
+    ],
+
+    "policy_head_dense" : [
+        
+    ],
+    "value_head_dense" : [
+        { "activation": "relu", "neurons": 50 }
     ],
     "padding": 2,
     "learning_rate": 0.01,

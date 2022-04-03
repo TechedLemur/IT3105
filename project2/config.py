@@ -36,19 +36,20 @@ class Config:
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
         self.padding = c["padding"]
-        self.network_type = c["network_type"]
-        if self.network_type == "Dense":
-            self.mode = 0
-            self.input_dim = 3*(self.k ** 2)
-        elif self.network_type == "CNN":
-            self.mode = 2
-            self.input_dim = (self.k + 2 * self.padding,
-                              self.k + 2 * self.padding,
-                              c["input_planes"],)
+        # self.network_type = c["network_type"]
+        # if self.network_type == "Dense":
+        #     self.mode = 0
+        #     self.input_dim = 3*(self.k ** 2)
+        self.mode = 2
+        self.input_dim = (self.k + 2 * self.padding,
+                          self.k + 2 * self.padding,
+                          c["input_planes"],)
 
         self.output_dim = self.k ** 2
-        self.layers = c["layers"]
-
+        self.pre_block_layers = c["pre_block_layers"]
+        self.residual_blocks = c["residual_blocks"]
+        self.policy_head_dense = c["policy_head_dense"]
+        self.value_head_dense = c["value_head_dense"]
         self.learning_rate = c["learning_rate"]
         self.epsilon = c["epsilon"]
         self.epsilon_decay = c["epsilon_decay"]
@@ -75,7 +76,7 @@ class Config:
         self.N = 5
 
         self.exploration_function = c["exploration_function"]
-        self.layers = c["layers"]
+        # self.layers = c["layers"]
 
 
 # if sys.argv[1][-4:] == "json":

@@ -23,81 +23,65 @@ class ActorNet:
         self.path = path
 
         input_layer = keras.Input(shape=cfg.input_dim, name="Input")
+        x = input_layer
 
-        if cfg.network_type == "CNN":
-            if cfg.padding:
-                x = layers.Conv2D(
-                    64, kernel_size=(3 + cfg.padding), strides=1, padding="valid"
-                )(input_layer)
-            else:
-                x = layers.Conv2D(64, 3, strides=1,
-                                  padding="same")(input_layer)
-            x = LeakyReLU()(x)
-            x = layers.BatchNormalization()(x)
+        for layer in cfg.pre_block_layers:
+            x = self.conv_layer(
+                x, layer['filters'], layer['kernel_size'], layer['activation'], 'valid')
 
-            x = self.residual_block(x, filters=64)
-            x = self.residual_block(x, filters=64)
+        for block in cfg.residual_blocks:
+            x = self.residual_block(
+                x, block['filters'], block['kernel_size'], block['activation'])
 
-            y = layers.Conv2D(1, 1, strides=1, padding="same")(x)
-            y = LeakyReLU()(y)
-            y = layers.BatchNormalization()(y)
-            y = layers.Flatten()(y)
-            policy_output_layer = layers.Dense(
-                cfg.output_dim, activation=tf.nn.softmax, name="policy"
-            )(y)
+        y = layers.Conv2D(1, 1, strides=1, padding="same")(x)
+        y = LeakyReLU()(y)
+        y = layers.BatchNormalization()(y)
+        y = layers.Flatten()(y)
 
-            z = layers.Conv2D(1, 1, strides=1, padding="same")(x)
-            z = LeakyReLU()(z)
-            z = layers.BatchNormalization()(z)
-            z = layers.Flatten()(z)
-            z = layers.Dense(50, activation="relu")(z)
+        for d in cfg.policy_head_dense:
+            y = layers.Dense(d["neurons"],
+                             activation=d["activation"])(y)
 
-            value_output_layer = layers.Dense(
-                1, activation=tf.nn.tanh, name="value")(z)
+        policy_output_layer = layers.Dense(
+            cfg.output_dim, activation=tf.nn.softmax, name="policy"
+        )(y)
 
-            self.policy = keras.Model(
-                input_layer, policy_output_layer, name="policy_model"
-            )
-            self.value = keras.Model(
-                input_layer, value_output_layer, name="value_model"
-            )
+        z = layers.Conv2D(1, 1, strides=1, padding="same")(x)
+        z = LeakyReLU()(z)
+        z = layers.BatchNormalization()(z)
+        z = layers.Flatten()(z)
+        for d in cfg.value_head_dense:
+            z = layers.Dense(d["neurons"],
+                             activation=d["activation"])(z)
 
-            self.model = keras.Model(
-                inputs=input_layer,
-                outputs=[policy_output_layer, value_output_layer],
-                name="2HNET",
-            )
+        value_output_layer = layers.Dense(
+            1, activation=tf.nn.tanh, name="value")(z)
 
-            losses = {
-                "policy": "categorical_crossentropy",
-                "value": "mse",
-            }
-            lossWeights = {"policy": 1.0, "value": 1.0}
-            self.model.compile(
-                optimizer=keras.optimizers.Adam(
-                    learning_rate=cfg.learning_rate),
-                loss=losses,
-                loss_weights=lossWeights,
-                metrics=["accuracy"],
-            )
-        elif cfg.network_type == "Dense":
-            x = input_layer
-            for layer in cfg.layers:
-                x = layers.Dense(layer["neurons"],
-                                 activation=layer["activation"])(x)
+        self.policy = keras.Model(
+            input_layer, policy_output_layer, name="policy_model"
+        )
+        self.value = keras.Model(
+            input_layer, value_output_layer, name="value_model"
+        )
 
-            output_layer = layers.Dense(
-                cfg.output_dim, activation=tf.nn.softmax, name="policy"
-            )(x)
+        self.model = keras.Model(
+            inputs=input_layer,
+            outputs=[policy_output_layer, value_output_layer],
+            name="2HNET",
+        )
 
-            self.model = keras.Model(input_layer, output_layer)
-
-            self.model.compile(
-                optimizer=cfg.optimizer(learning_rate=cfg.learning_rate),
-                loss="categorical_crossentropy",
-                metrics=["accuracy"],
-            )
-            self.policy = self.model
+        losses = {
+            "policy": "categorical_crossentropy",
+            "value": "mse",
+        }
+        lossWeights = {"policy": 1.0, "value": 1.0}
+        self.model.compile(
+            optimizer=cfg.optimizer(
+                learning_rate=cfg.learning_rate),
+            loss=losses,
+            loss_weights=lossWeights,
+            metrics=["accuracy"],
+        )
 
         if weight_path:
             self.model.load_weights(weight_path)
@@ -106,11 +90,17 @@ class ActorNet:
         self.epsilon = cfg.epsilon
 
     @staticmethod
-    def residual_block(x, filters: int, kernel_size=3):
-        y = layers.Conv2D(
-            kernel_size=kernel_size, filters=filters, strides=1, padding="same"
-        )(x)
-        y = LeakyReLU()(y)
+    def residual_block(x, filters: List[int], kernel_size=3, activation='leaky_rely'):
+        if activation == 'leaky_relu':
+            y = layers.Conv2D(
+                kernel_size=kernel_size, filters=filters, strides=1, padding="same"
+            )(x)
+            y = LeakyReLU()(y)
+        else:
+            y = layers.Conv2D(
+                kernel_size=kernel_size, filters=filters, strides=1, padding="same",
+                activation=activation
+            )(x)
         y = layers.BatchNormalization()(y)
 
         y = layers.Conv2D(
@@ -123,6 +113,18 @@ class ActorNet:
         out = layers.BatchNormalization()(out)
 
         return out
+
+    @staticmethod
+    def conv_layer(x, filters: int, kernel_size: int, activation, padding):
+        if activation == 'leaky_relu':
+            y = layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=1,
+                              padding=padding)(x)
+            y = LeakyReLU()(y)
+        else:
+            y = layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=1,
+                              padding=padding, activation=activation)(x)
+        y = layers.BatchNormalization()(y)
+        return y
 
     def set_weights(self, weights):
         self.model.set_weights(weights)
