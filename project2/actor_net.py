@@ -39,9 +39,7 @@ class ActorNet:
         # x = keras.activations.relu(x)
         # x = layers.BatchNormalization()(x)
 
-        # TODO: Add more layers? Resnet?
-
-        for _ in range(20):
+        for _ in range(5):
             x = self.residual_block(x, filters=64)
 
         y = layers.Conv2D(1, 1, strides=1, padding='same')(x)
