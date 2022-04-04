@@ -115,7 +115,13 @@ class ReinforcementLearningAgent:
             np.array(states),
         )
 
-    def train(self, file_suffix="", n_parallel=1, train_net=True, train_interval=1):
+    def train(
+        self,
+        file_suffix="",
+        n_parallel=1,
+        train_net=True,
+        train_interval=cfg.train_interval,
+    ):
         """Run X episodes from config-file.
         Training consists of a loop done by running MCTS, choosing best move based on distribution and then training the
         ActorNet.
