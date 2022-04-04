@@ -1,4 +1,4 @@
-from gameworlds.gameworld import State, Action, GameWorld
+from gameworlds.gameworld import State, Action
 from typing import List, Tuple
 import tensorflow as tf
 from tensorflow import keras
@@ -54,10 +54,13 @@ class ActorNet:
         for d in cfg.value_head_dense:
             z = layers.Dense(d["neurons"], activation=d["activation"])(z)
 
-        value_output_layer = layers.Dense(1, activation=tf.nn.tanh, name="value")(z)
+        value_output_layer = layers.Dense(
+            1, activation=tf.nn.tanh, name="value")(z)
 
-        self.policy = keras.Model(input_layer, policy_output_layer, name="policy_model")
-        self.value = keras.Model(input_layer, value_output_layer, name="value_model")
+        self.policy = keras.Model(
+            input_layer, policy_output_layer, name="policy_model")
+        self.value = keras.Model(
+            input_layer, value_output_layer, name="value_model")
 
         self.model = keras.Model(
             inputs=input_layer,
@@ -164,7 +167,8 @@ class ActorNet:
         # Softmax output
         probs = self.policy(np.array([world.as_vector()]))[0]
 
-        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array(
+            [a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
@@ -335,10 +339,12 @@ class LiteModel:
     def predict(self, inp):
         inp = inp.astype(self.input_dtype)
         count = inp.shape[0]
-        v_out = np.zeros((count, self.v_output_shape[1]), dtype=self.v_output_dtype)
-        p_out = np.zeros((count, self.p_output_shape[1]), dtype=self.p_output_dtype)
+        v_out = np.zeros(
+            (count, self.v_output_shape[1]), dtype=self.v_output_dtype)
+        p_out = np.zeros(
+            (count, self.p_output_shape[1]), dtype=self.p_output_dtype)
         for i in range(count):
-            self.interpreter.set_tensor(self.input_index, inp[i : i + 1])
+            self.interpreter.set_tensor(self.input_index, inp[i: i + 1])
             self.interpreter.invoke()
             v_out[i] = self.interpreter.get_tensor(self.v_output_index)[0]
             p_out[i] = self.interpreter.get_tensor(self.p_output_index)[0]

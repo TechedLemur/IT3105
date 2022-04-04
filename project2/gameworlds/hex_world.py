@@ -1,5 +1,5 @@
 from copy import copy
-from gameworlds.gameworld import GameWorld, State, Action
+from gameworlds.gameworld import State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
@@ -8,6 +8,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import copy
 from IPython.display import clear_output
+import time
 
 
 def generate_neighbors(K=cfg.k) -> dict:
@@ -430,6 +431,16 @@ class HexState(State):
         return HexState.from_array(array).as_vector()
 
     def plot(self, labels: bool = False):
+        d = {
+            3: 8,
+            4: 8,
+            5: 10,
+            6: 1,
+            7: 8,
+            8: 15,
+            9: 9,
+            10: 3
+        }
 
         cdict = {0: "grey", 1: "red", -1: "blue"}
 
@@ -463,25 +474,17 @@ class HexState(State):
 
         clear_output(wait=True)
         plt.figure(figsize=(10, 10))
-        seed = 8
-        if k == 5:
-            seed = 10
+        seed = d[self.k]
         pos = nx.spring_layout(G, seed=seed)
         nx.draw(G, pos=pos, node_color=colormap,
                 node_size=400, edge_color=edgemap)
         if labels:
             nx.draw_networkx_labels(G, pos, verticalalignment="center")
         plt.show()
+        time.sleep(cfg.plot_delay)
 
     def copy(self):
         return copy.deepcopy(self)
 
     def __hash__(self):
         return hash(repr(self))
-
-
-class HexWorld(GameWorld):
-    # TODO: Scrap this? Task description wants a "State manager" though .__.
-
-    def __init__(self):
-        pass

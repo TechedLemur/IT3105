@@ -3,6 +3,7 @@ from actor_net import ActorNet
 from gameworlds.hex_world import HexState
 import time
 import numpy as np
+from config import cfg
 
 
 class Topp:
@@ -71,11 +72,12 @@ class Topp:
             results[i] = winner
 
         if verbose:
-            print(f"Player 1 won {len(results[results > 0])} / {no_games} games")
+            print(
+                f"Player 1 won {len(results[results > 0])} / {no_games} games")
 
         return results
 
-    def play_topp(agents: List[ActorNet], no_games=50):
+    def play_topp(agents: List[ActorNet], no_games=cfg.G, visualize=cfg.topp_vizualize):
         results = {}
         for a in agents:
             results[a.name] = []
@@ -85,7 +87,8 @@ class Topp:
             for agent2 in agents:
                 if agent != agent2 and (agent.name, agent2.name) not in played:
 
-                    r = Topp.play_tournament(agent, agent2, no_games)
+                    r = Topp.play_tournament(
+                        agent, agent2, no_games, plot=visualize)
                     results[agent.name].append(
                         f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}. As starting {len(r[:no_games//2][r[:no_games//2] > 0])} / {no_games//2}, as second {len(r[no_games//2:][r[no_games//2:] > 0])} / {no_games//2}"
                     )

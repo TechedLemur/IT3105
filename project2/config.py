@@ -23,6 +23,11 @@ class Config:
         self.replay_buffer_size = c["replay_buffer_size"]
         self.train_epochs = c["train_epochs"]
         self.train_interval = c["train_interval"]
+        self.use_contender = c["use_contender"]
+
+        self.training_visualize = c["training_visualize"]
+        self.topp_vizualize = c["topp_vizualize"]
+        self.plot_delay = c['plot_delay']
 
         # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
         self.episodes = c["episodes"]

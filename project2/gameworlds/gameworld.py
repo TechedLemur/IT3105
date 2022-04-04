@@ -14,21 +14,3 @@ class State(ABC):
 
     def __hash__(self):
         return hash(repr(self))
-
-
-class GameWorld(ABC):
-    @abstractmethod
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def get_legal_actions(self) -> List[Action]:
-        pass
-
-    @abstractmethod
-    def do_action(self, action: Action) -> State:
-        pass
-
-    def get_state(self):
-        return self.state
-

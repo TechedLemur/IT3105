@@ -4,14 +4,14 @@
     "replay_buffer_size": 2500,
     "train_epochs": 8,
     "train_interval": 1,
-    "episodes": 40,
-    "search_games": 1300,
+    "episodes": 10,
+    "search_games": 500,
     "c": 1.5,
     "random_rollout_move_p": 0.01,
     "rollout_chance": 1,
     "rollout_decay": 0.95,
     "reward_decay": 1,
-
+    "use_contender": false,
     "pre_block_layers": [
         { "activation": "leaky_relu", "filters": 64, "kernel_size": 5 }
     ],
@@ -39,5 +39,9 @@
     "optimizer": "adam",
     "M": 5,
     "G": 50,
-    "exploration_function": "puct"
+    "exploration_function": "puct",
+
+    "training_visualize" : false,
+    "topp_vizualize" : false,
+    "plot_delay": 0.1
 }
