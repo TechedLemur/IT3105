@@ -138,3 +138,4 @@ dmypy.json
 api_token.ini
 
 project2/data
+/project2/mcts-graphs

@@ -15,7 +15,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable gpu
 
 class ActorNet:
     """
-    Neural network actor
+    Two-headed neural network representing actor and critic.
     """
 
     def __init__(self, path: str = ".", weight_path=None) -> None:
@@ -27,11 +27,13 @@ class ActorNet:
 
         for layer in cfg.pre_block_layers:
             x = self.conv_layer(
-                x, layer['filters'], layer['kernel_size'], layer['activation'], 'valid')
+                x, layer["filters"], layer["kernel_size"], layer["activation"], "valid"
+            )
 
         for block in cfg.residual_blocks:
             x = self.residual_block(
-                x, block['filters'], block['kernel_size'], block['activation'])
+                x, block["filters"], block["kernel_size"], block["activation"]
+            )
 
         y = layers.Conv2D(1, 1, strides=1, padding="same")(x)
         y = LeakyReLU()(y)
@@ -39,8 +41,7 @@ class ActorNet:
         y = layers.Flatten()(y)
 
         for d in cfg.policy_head_dense:
-            y = layers.Dense(d["neurons"],
-                             activation=d["activation"])(y)
+            y = layers.Dense(d["neurons"], activation=d["activation"])(y)
 
         policy_output_layer = layers.Dense(
             cfg.output_dim, activation=tf.nn.softmax, name="policy"
@@ -51,18 +52,12 @@ class ActorNet:
         z = layers.BatchNormalization()(z)
         z = layers.Flatten()(z)
         for d in cfg.value_head_dense:
-            z = layers.Dense(d["neurons"],
-                             activation=d["activation"])(z)
+            z = layers.Dense(d["neurons"], activation=d["activation"])(z)
 
-        value_output_layer = layers.Dense(
-            1, activation=tf.nn.tanh, name="value")(z)
+        value_output_layer = layers.Dense(1, activation=tf.nn.tanh, name="value")(z)
 
-        self.policy = keras.Model(
-            input_layer, policy_output_layer, name="policy_model"
-        )
-        self.value = keras.Model(
-            input_layer, value_output_layer, name="value_model"
-        )
+        self.policy = keras.Model(input_layer, policy_output_layer, name="policy_model")
+        self.value = keras.Model(input_layer, value_output_layer, name="value_model")
 
         self.model = keras.Model(
             inputs=input_layer,
@@ -76,8 +71,7 @@ class ActorNet:
         }
         lossWeights = {"policy": 1.0, "value": 1.0}
         self.model.compile(
-            optimizer=cfg.optimizer(
-                learning_rate=cfg.learning_rate),
+            optimizer=cfg.optimizer(learning_rate=cfg.learning_rate),
             loss=losses,
             loss_weights=lossWeights,
             metrics=["accuracy"],
@@ -90,16 +84,19 @@ class ActorNet:
         self.epsilon = cfg.epsilon
 
     @staticmethod
-    def residual_block(x, filters: List[int], kernel_size=3, activation='leaky_rely'):
-        if activation == 'leaky_relu':
+    def residual_block(x, filters: List[int], kernel_size=3, activation="leaky_rely"):
+        if activation == "leaky_relu":
             y = layers.Conv2D(
                 kernel_size=kernel_size, filters=filters, strides=1, padding="same"
             )(x)
             y = LeakyReLU()(y)
         else:
             y = layers.Conv2D(
-                kernel_size=kernel_size, filters=filters, strides=1, padding="same",
-                activation=activation
+                kernel_size=kernel_size,
+                filters=filters,
+                strides=1,
+                padding="same",
+                activation=activation,
             )(x)
         y = layers.BatchNormalization()(y)
 
@@ -116,13 +113,19 @@ class ActorNet:
 
     @staticmethod
     def conv_layer(x, filters: int, kernel_size: int, activation, padding):
-        if activation == 'leaky_relu':
-            y = layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=1,
-                              padding=padding)(x)
+        if activation == "leaky_relu":
+            y = layers.Conv2D(
+                filters=filters, kernel_size=kernel_size, strides=1, padding=padding
+            )(x)
             y = LeakyReLU()(y)
         else:
-            y = layers.Conv2D(filters=filters, kernel_size=kernel_size, strides=1,
-                              padding=padding, activation=activation)(x)
+            y = layers.Conv2D(
+                filters=filters,
+                kernel_size=kernel_size,
+                strides=1,
+                padding=padding,
+                activation=activation,
+            )(x)
         y = layers.BatchNormalization()(y)
         return y
 
@@ -138,7 +141,7 @@ class ActorNet:
             self.epsilon = 0
 
     def select_action(
-        self, world: State, greedy=False, argmax=False, winning_heuristic=False
+        self, world: State, greedy=False, argmax=False, use_expert_heuristic=False
     ) -> Action:
         """
         Select an action based on the state.
@@ -146,8 +149,8 @@ class ActorNet:
 
         legal_actions = world.get_legal_actions()
 
-        if winning_heuristic:
-            h = self.winning_heuristic(world, legal_actions)
+        if use_expert_heuristic:
+            h = self.expert_heuristic(world, legal_actions)
 
             if h:
                 return legal_actions[random.choice(h)]
@@ -161,8 +164,7 @@ class ActorNet:
         # Softmax output
         probs = self.policy(np.array([world.as_vector()]))[0]
 
-        mask = np.array(
-            [a in legal_actions for a in all_actions]).astype(np.float32)
+        mask = np.array([a in legal_actions for a in all_actions]).astype(np.float32)
 
         probs *= mask
 
@@ -178,49 +180,50 @@ class ActorNet:
             new_action_index = np.argmax(probs)
             new_action = all_actions[new_action_index]
         else:
-            new_action = np.random.choice(all_actions, p=probs)
+            try:
+                new_action = np.random.choice(all_actions, p=probs)
+            except:
+                new_action = random.choice(legal_actions)
 
-        # if world.player == -1:
-        # new_action = new_action.transposed()
         return new_action
 
-    def get_policy(self, state, winning_heuristic=False):
+    def get_policy(self, state: State) -> np.array:
         """
-        Returns a list of
+        Args:
+            state (State): State to evaluate policy for
+
+        Returns:
+            np.array: An array of probabilities corresponding to the policy for the current legal actions.
         """
         legal_actions = state.get_legal_actions()
 
-        # if winning_heuristic:
-
-        #     h = self.winning_heuristic(state, legal_actions)
-
-        #     if h:
-        #         probs = np.zeros(len(legal_actions))
-        #         probs[h] = 1
-        #         probs = probs / np.sum(probs)
-        #         return probs, True
-
         prediction = self.lite_model.predict(np.array([state.as_vector()]))
         probs = prediction[0].reshape(cfg.k, cfg.k)
-
-        if state.player == -1:
-            probs = probs.T
 
         p = np.zeros(len(legal_actions))
 
         for i, a in enumerate(legal_actions):
             p[i] = probs[a.row, a.col]
 
-        return p / np.sum(p), False
+        return p / np.sum(p)
 
     def get_policy_and_reward(
-        self, state: State, greedy=False, winning_heuristic=False
-    ):
+        self, state: State, use_expert_heuristic=False
+    ) -> np.array:
+        """
+        Get policy and reward from Actor-Critic-Net.
 
+        Args:
+            state (State): State to evaluate policy and reward for.
+            use_expert_heuristic (bool, optional): If expert heuristic should be used. Defaults to False.
+
+        Returns:
+            np.array: Policy (probability of each action) and the estimated reward for the state.
+        """
         legal_actions = state.get_legal_actions()
 
-        if winning_heuristic:
-            h = self.winning_heuristic(state, legal_actions)
+        if use_expert_heuristic:
+            h = self.expert_heuristic(state, legal_actions)
 
             if h:
                 probs = np.zeros(len(legal_actions))
@@ -241,10 +244,15 @@ class ActorNet:
         return p / np.sum(p), value
 
     @staticmethod
-    def winning_heuristic(state, legal_actions) -> List[int]:
+    def expert_heuristic(state, legal_actions) -> List[int]:
         """
-        Check all child states, and if we have a winning state, choose it.
-        Returns list of indices of winning moves
+        Use "expert" heuristic which includes:
+        * Do winning moves if there are any.
+        * Stop winning moves for the opponent.
+        * Save bridges.
+
+        Returns:
+            List[int]: Indices for all winning moves (if any).
         """
         winning = []
         stop_opponent = []
@@ -269,13 +277,6 @@ class ActorNet:
         elif stop_opponent:
             return stop_opponent
         return save_bridge
-
-    def evaluate_state(self, state: State) -> float:
-        # TODO: See if it makes sense to predict multiple states at the same time
-
-        v = self.value(np.array([state.as_vector()]))  # v has shape 1,1
-
-        return v[0][0].numpy()
 
     def train(
         self,
@@ -304,7 +305,8 @@ class ActorNet:
 
 
 class LiteModel:
-
+    """Lite keras-model used to speed up predictions done during MC-search.
+    """
     @classmethod
     def from_file(cls, model_path):
         return LiteModel(tf.lite.Interpreter(model_path=model_path))
@@ -333,12 +335,10 @@ class LiteModel:
     def predict(self, inp):
         inp = inp.astype(self.input_dtype)
         count = inp.shape[0]
-        v_out = np.zeros(
-            (count, self.v_output_shape[1]), dtype=self.v_output_dtype)
-        p_out = np.zeros(
-            (count, self.p_output_shape[1]), dtype=self.p_output_dtype)
+        v_out = np.zeros((count, self.v_output_shape[1]), dtype=self.v_output_dtype)
+        p_out = np.zeros((count, self.p_output_shape[1]), dtype=self.p_output_dtype)
         for i in range(count):
-            self.interpreter.set_tensor(self.input_index, inp[i:i+1])
+            self.interpreter.set_tensor(self.input_index, inp[i : i + 1])
             self.interpreter.invoke()
             v_out[i] = self.interpreter.get_tensor(self.v_output_index)[0]
             p_out[i] = self.interpreter.get_tensor(self.p_output_index)[0]

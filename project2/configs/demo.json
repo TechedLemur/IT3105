@@ -2,6 +2,8 @@
     "k": 5,
     "mini_batch_size": 1100,
     "replay_buffer_size": 2500,
+    "train_epochs": 8,
+    "train_interval": 1,
     "episodes": 40,
     "search_games": 1300,
     "c": 1.5,
@@ -9,24 +11,24 @@
     "rollout_chance": 1,
     "rollout_decay": 0.95,
     "reward_decay": 1,
-    
-    "pre_block_layers" : [
-        {"activation": "leaky_relu", "filters":64, "kernel_size":5}
+
+    "pre_block_layers": [
+        { "activation": "leaky_relu", "filters": 64, "kernel_size": 5 }
     ],
-    "residual_blocks" : [
-        {"activation": "leaky_relu", "filters":64, "kernel_size":3},
-        {"activation": "leaky_relu", "filters":64, "kernel_size":3}
+    "residual_blocks": [
+        { "activation": "leaky_relu", "filters": 64, "kernel_size": 3 },
+        { "activation": "leaky_relu", "filters": 64, "kernel_size": 3 }
     ],
 
-    "policy_head_dense" : [
-        
+    "policy_head_dense": [
+
     ],
-    "value_head_dense" : [
+    "value_head_dense": [
         { "activation": "relu", "neurons": 50 }
     ],
     "padding": 2,
     "learning_rate": 0.01,
-    "input_planes":9,
+    "input_planes": 9,
     "epsilon": 0.25,
     "epsilon_decay": 0.97,
     "alpha": 0.5,

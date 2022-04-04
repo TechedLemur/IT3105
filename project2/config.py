@@ -21,6 +21,8 @@ class Config:
 
         self.mini_batch_size = c["mini_batch_size"]
         self.replay_buffer_size = c["replay_buffer_size"]
+        self.train_epochs = c["train_epochs"]
+        self.train_interval = c["train_interval"]
 
         # Standard MCTS parameters, such as the number of episodes, number of search games per actual move, etc.
         self.episodes = c["episodes"]
@@ -36,14 +38,12 @@ class Config:
         # In the ANET, the learning rate, the number of hidden layers and neurons per layer, along with any of the
         # following activation functions for hidden nodes: linear, sigmoid, tanh, RELU.
         self.padding = c["padding"]
-        # self.network_type = c["network_type"]
-        # if self.network_type == "Dense":
-        #     self.mode = 0
-        #     self.input_dim = 3*(self.k ** 2)
         self.mode = 2
-        self.input_dim = (self.k + 2 * self.padding,
-                          self.k + 2 * self.padding,
-                          c["input_planes"],)
+        self.input_dim = (
+            self.k + 2 * self.padding,
+            self.k + 2 * self.padding,
+            c["input_planes"],
+        )
 
         self.output_dim = self.k ** 2
         self.pre_block_layers = c["pre_block_layers"]
@@ -76,12 +76,8 @@ class Config:
         self.N = 5
 
         self.exploration_function = c["exploration_function"]
-        # self.layers = c["layers"]
 
 
-# if sys.argv[1][-4:] == "json":
-#     cfg_file = sys.argv[1]
-# else:
 cfg_file = "demo.json"
 
 print("Config file: ", cfg_file)
