@@ -1,5 +1,5 @@
 {
-    "k": 5,
+    "k": 4,
     "mini_batch_size": 1100,
     "replay_buffer_size": 2500,
     "train_epochs": 8,
@@ -41,7 +41,7 @@
     "G": 50,
     "exploration_function": "puct",
 
-    "training_visualize" : false,
-    "topp_vizualize" : false,
+    "training_visualize": false,
+    "topp_vizualize": false,
     "plot_delay": 0.1
 }

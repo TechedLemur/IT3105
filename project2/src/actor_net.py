@@ -1,12 +1,12 @@
-from gameworlds.gameworld import State, Action
+from src.gameworlds.gameworld import State, Action
 from typing import List, Tuple
 import tensorflow as tf
 from tensorflow import keras
-from gameworlds.hex_world import HexState
+from src.gameworlds.hex_world import HexState
 from tensorflow.keras import layers
 import numpy as np
 import random
-from config import cfg
+from src.config import cfg
 import os
 from keras.layers.advanced_activations import LeakyReLU
 

@@ -1,0 +1,2 @@
+model_checkpoint_path: "model04x4"
+all_model_checkpoint_paths: "model04x4"

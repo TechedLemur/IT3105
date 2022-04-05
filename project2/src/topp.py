@@ -1,14 +1,14 @@
 from typing import List
-from actor_net import ActorNet
-from gameworlds.hex_world import HexState
+from src.actor_net import ActorNet
+from src.gameworlds.hex_world import HexState
 import time
 import numpy as np
-from config import cfg
+from src.config import cfg
 
 
 class Topp:
     """
-    The Tournament of Progressive Policies
+    The Tournament of Progressive Policies.
     """
 
     def __init__(self) -> None:

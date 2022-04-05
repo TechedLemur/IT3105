@@ -1,9 +1,9 @@
 from copy import copy
-from gameworlds.gameworld import State, Action
+from src.gameworlds.gameworld import State, Action
 from typing import List, Tuple
 from dataclasses import dataclass
 import numpy as np
-from config import cfg
+from src.config import cfg
 import networkx as nx
 import matplotlib.pyplot as plt
 import copy
@@ -98,13 +98,11 @@ def generate_bridge_dict(K=cfg.k):
             up = ((row - 1, col), (row, col - 1), (row - 1, col - 1))
 
             up_right = ((row + 1, col - 1), (row, col - 1), (row + 1, col - 2))
-            down_right = ((row + 1, col - 1),
-                          (row + 1, col), (row + 2, col - 1))
+            down_right = ((row + 1, col - 1), (row + 1, col), (row + 2, col - 1))
 
             down = ((row + 1, col), (row, col + 1), (row + 1, col + 1))
 
-            down_left = ((row, col + 1), (row - 1, col + 1),
-                         (row - 1, col + 2))
+            down_left = ((row, col + 1), (row - 1, col + 1), (row - 1, col + 2))
             up_left = ((row - 1, col + 1), (row - 1, col), (row - 2, col + 1))
 
             patterns = [up, up_right, up_left, down, down_left, down_right]
@@ -380,15 +378,13 @@ class HexState(State):
                                 if b_copy[i, j] == 1:
                                     # Player 1 bridge endpoint
                                     player1_endpoint[i, j] = max(
-                                        player1_endpoint[i,
-                                                         j], b_copy[endpoint] >= 0
+                                        player1_endpoint[i, j], b_copy[endpoint] >= 0
                                     )
                             elif b_copy[carrier1] != -1 and b_copy[carrier2] != -1:
                                 if b_copy[i, j] == -1:
                                     # player 2 bridge endpoint
                                     player2_endpoint[i, j] = max(
-                                        player2_endpoint[i,
-                                                         j], b_copy[endpoint] <= 0
+                                        player2_endpoint[i, j], b_copy[endpoint] <= 0
                                     )
                         if b_copy[i, j] == p:
                             if b_copy[carrier1] == 0 and b_copy[carrier2] == 0:
@@ -431,16 +427,7 @@ class HexState(State):
         return HexState.from_array(array).as_vector()
 
     def plot(self, labels: bool = False):
-        d = {
-            3: 8,
-            4: 8,
-            5: 10,
-            6: 1,
-            7: 8,
-            8: 15,
-            9: 9,
-            10: 3
-        }
+        d = {3: 8, 4: 8, 5: 10, 6: 1, 7: 8, 8: 15, 9: 9, 10: 3}
 
         cdict = {0: "grey", 1: "red", -1: "blue"}
 
@@ -472,12 +459,11 @@ class HexState(State):
             else:
                 edgemap.append("black")
 
-        clear_output(wait=True)
+        # clear_output(wait=True)
         plt.figure(figsize=(10, 10))
         seed = d[self.k]
         pos = nx.spring_layout(G, seed=seed)
-        nx.draw(G, pos=pos, node_color=colormap,
-                node_size=400, edge_color=edgemap)
+        nx.draw(G, pos=pos, node_color=colormap, node_size=400, edge_color=edgemap)
         if labels:
             nx.draw_networkx_labels(G, pos, verticalalignment="center")
         plt.show()

@@ -1,18 +1,14 @@
-from copy import copy
 import datetime
 import random
 from typing import List, Tuple
-from config import cfg
+from src.config import cfg
 import uuid
 import numpy as np
-from actor_net import ActorNet
-from gameworlds.gameworld import Action, State
+from src.actor_net import ActorNet
+from src.gameworlds.gameworld import Action, State
+from src.gameworlds.hex_world import HexState
 from collections import defaultdict
-
 from graphviz import Digraph
-
-from gameworlds.hex_world import HexState, HexAction
-
 
 def get_epochtime_ms():
     return round(datetime.datetime.utcnow().timestamp() * 1000)

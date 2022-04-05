@@ -1,6 +1,6 @@
-from gdrive import upload_data
-from rl import ReinforcementLearningAgent
-from config import cfg, cfg_file
+from src.gdrive import upload_data
+from src.rl import ReinforcementLearningAgent
+from src.config import cfg, cfg_file
 from datetime import datetime
 import numpy as np
 import os

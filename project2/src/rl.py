@@ -1,16 +1,16 @@
 import random
 from re import I
 from typing import List, Set
-from actor_net import ActorNet
-from mcts import MCTS
-from gameworlds.hex_world import HexState
-from config import cfg
+from src.actor_net import ActorNet
+from src.mcts import MCTS
+from src.gameworlds.hex_world import HexState
+from src.config import cfg
 import numpy as np
 import timeit
 from multiprocessing import Pool, cpu_count
 from datetime import datetime
-from gameworlds.gameworld import State
-from topp import Topp
+from src.gameworlds.gameworld import State
+from src.topp import Topp
 
 
 class ReinforcementLearningAgent:
