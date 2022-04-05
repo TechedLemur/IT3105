@@ -1,5 +1,5 @@
 {
-    "k": 4,
+    "k": 5,
     "mini_batch_size": 1100,
     "replay_buffer_size": 2500,
     "train_epochs": 8,

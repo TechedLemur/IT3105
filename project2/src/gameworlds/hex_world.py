@@ -87,7 +87,7 @@ neighbors = generate_neighbors()
 def generate_bridge_dict(K=cfg.k):
     """
     Generate a dictionary mapping each cell to their possible bridge carrier and endpoints
-    Format [(carrier1, carrier2, endpoind1), (carrier3, carrier4, endpoind2)...]
+    Format [(carrier1, carrier2, endpoint1), (carrier3, carrier4, endpoint2)...]
     """
 
     bridges = {}
@@ -168,7 +168,6 @@ def is_final_move(
 @dataclass
 class HexAction(Action):
 
-    # TODO: May incresase performance to use 1D representation and just use one index as action
     row: int
     col: int
 
@@ -216,32 +215,28 @@ class HexState(State):
         board = np.where(board > 1, -1, board)
 
         final = False
-        # Calculate final state. Maybe not necessary, as there is no use to continue after a game is finished
-        # for i in range(n):
-        #     if player == 1:
-        #         if is_final_move(
-        #             move=(0, i), player=1, k=n, board=board
-        #         ):  # Check all top pieces
-        #             final = True
-        #             break
-        #     else:  # Player -1
-        #         # Check all left pieces
-        #         if is_final_move(move=(i, 0), player=-1, k=n, board=board):
-        #             final = True
-        #             break
-
         return HexState(is_final_state=final, player=player, board=board, k=n)
 
-        # TODO? (performance gains): Make converter directly from "Flattened Game State" to ANET input without proxy through HexState
-
     @staticmethod
-    def empty_board(starting_player: int = 1, k=cfg.k):
+    def empty_board(starting_player: int = 1, k: int = cfg.k) -> State:
+        """Create an empty board state.
+
+        Args:
+            starting_player (int, optional): Player to start. Defaults to 1.
+            k (int, optional): Board size. Defaults to cfg.k.
+
+        Returns:
+            State: Empty board state.
+        """
         board = np.zeros(k ** 2).reshape((k, k))
         return HexState(is_final_state=False, player=starting_player, board=board, k=k)
 
     def get_legal_actions(self) -> List[HexAction]:
+        """Get all legal actions for a state.
 
-        # TODO?: See if we can get faster than k^2
+        Returns:
+            List[HexAction]: Legal actions.
+        """
 
         actions = []
         if self.is_final_state:
@@ -254,6 +249,11 @@ class HexState(State):
         return actions
 
     def get_all_actions(self) -> List[Action]:
+        """Get all possible actions. (No matter if legal or not for position).
+
+        Returns:
+            List[Action]: Get all possible actions.
+        """
         actions = []
         for i in range(self.k):
             for j in range(self.k):
@@ -261,6 +261,17 @@ class HexState(State):
         return actions
 
     def do_action(self, action: HexAction) -> State:
+        """Do an action on from this state.
+
+        Args:
+            action (HexAction): Action to do.
+
+        Raises:
+            Exception: Illegal move.
+
+        Returns:
+            State: New board state after this action has been done.
+        """
 
         board = self.board.copy()
 
@@ -278,9 +289,11 @@ class HexState(State):
             is_final_state=final, player=-self.player, board=board, k=self.k
         )
 
-    def inverted(self):
-        """
-        Returns a new state where the board is transposed and the colors reversed
+    def inverted(self) -> State:
+        """ Returns a new state where the board is transposed and the colors reversed.
+
+        Returns:
+            State: Inverted board state.
         """
         return HexState(
             is_final_state=self.is_final_state,
@@ -289,11 +302,12 @@ class HexState(State):
             k=self.k,
         )
 
-    def rotate180(self):
-        """
-        Returns a new state where the board is rotated 180 degrees, as well as the inverted version of this state
-        """
+    def rotate180(self) -> Tuple[State]:
+        """Returns a new state where the board is rotated 180 degrees, as well as the inverted version of this state.
 
+        Returns:
+            Tuple[State]: Rotated 180 degree state and inverted 180 degree state.
+        """
         return (
             HexState(
                 is_final_state=self.is_final_state,
@@ -309,10 +323,11 @@ class HexState(State):
             ),
         )
 
-    def as_vector(self):
-        """
-        Returns the game state as a vector intended to use as input for the ANET.
+    def as_vector(self) -> np.array:
+        """ Returns the game state as a vector intended to use as input for the ANET.
 
+        Returns:
+            np.array: Board state as a vector.
         """
         if (
             cfg.mode == 0
@@ -415,7 +430,12 @@ class HexState(State):
 
             return array
 
-    def to_array(self):
+    def to_array(self)->np.array:
+        """Turn board state to array.
+
+        Returns:
+            np.array: Board state as array.
+        """
         arr = np.zeros(self.k ** 2 + 1)
         arr[0] = self.player
         arr[1:] = self.board.flatten()
@@ -423,10 +443,23 @@ class HexState(State):
         return arr
 
     @staticmethod
-    def from_array_to_vector(array):
+    def from_array_to_vector(array: np.array)->np.array:
+        """Convert from array to vector.
+
+        Args:
+            array (np.array): Array to transform.
+
+        Returns:
+            np.array: Vector.
+        """
         return HexState.from_array(array).as_vector()
 
     def plot(self, labels: bool = False):
+        """Plot the current game state.
+
+        Args:
+            labels (bool, optional): If labels should be drawn. Defaults to False.
+        """
         d = {3: 8, 4: 8, 5: 10, 6: 1, 7: 8, 8: 15, 9: 9, 10: 3}
 
         cdict = {0: "grey", 1: "red", -1: "blue"}
