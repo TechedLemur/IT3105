@@ -90,10 +90,10 @@ class Topp:
                     r = Topp.play_tournament(
                         agent, agent2, no_games, plot=visualize)
                     results[agent.name].append(
-                        f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}. As starting {len(r[:no_games//2][r[:no_games//2] > 0])} / {no_games//2}, as second {len(r[no_games//2:][r[no_games//2:] > 0])} / {no_games//2}"
+                        f"Won {len(r[r > 0])} / {no_games} agains {agent2.name}. As starting: {len(r[:no_games//2][r[:no_games//2] > 0])} / {no_games//2}, as second: {len(r[no_games//2:][r[no_games//2:] > 0])} / {no_games//2}"
                     )
                     results[agent2.name].append(
-                        f"Won {len(r[r < 0])} / {no_games} agains {agent.name}. As starting {len(r[:no_games//2][r[:no_games//2] < 0])} / {no_games//2}, as second {len(r[no_games//2:][r[no_games//2:] < 0])} / {no_games//2}"
+                        f"Won {len(r[r < 0])} / {no_games} agains {agent.name}. As starting: {len(r[no_games//2:][r[no_games//2:] < 0])} / {no_games//2}, as second: {len(r[:no_games//2][r[:no_games//2] < 0])} / {no_games//2}"
                     )
                     played.append((agent.name, agent2.name))
                     played.append((agent2.name, agent.name))
