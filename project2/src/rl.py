@@ -26,7 +26,7 @@ class ReinforcementLearningAgent:
         """Runs an episode (a full game) for the RLA.
 
         Args:
-            params (tuple): (weights, starting_player, rollout_chance, epsilon). Parameters for the trainin gepisode
+            params (tuple): (weights, starting_player, rollout_chance, epsilon). Parameters for the training episode
             anet (ActorNet, optional): ActorNet to use as actor and critic for the MCTS. Defaults to None.
 
         Returns:
@@ -57,19 +57,10 @@ class ReinforcementLearningAgent:
         while not world.is_final_state:
             # print(f"Move {move}:")
             mcts.run_simulations(rollout_chance)
-            if move == 1:
-                if random.random() <= 0.02:
-                    D = np.zeros((cfg.k, cfg.k))
-                    D[cfg.k // 2, cfg.k // 2] = 1  # Set middle move 1
-                    q = 0.1  # Assuming starting player more likely to win
-                    D = D.flatten()
-                # player = -player
-                else:
-                    D, q = mcts.get_visit_counts_from_root()
-            else:
-                D, q = mcts.get_visit_counts_from_root()
+            
+            
+            D, q = mcts.get_visit_counts_from_root()
 
-            # print("D: ", D)
             # Decay rewards after each move
             reward_factors = [x * cfg.reward_decay for x in reward_factors]
             state = mcts.root.state
