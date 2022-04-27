@@ -15,5 +15,5 @@ class Config:
         N = 100
 
     class TileEncodingConfig:
-        buckets = 4 * 4
+        buckets = 4
         tiles = 4

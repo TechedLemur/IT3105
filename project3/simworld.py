@@ -1,4 +1,6 @@
 from typing import List, Tuple
+
+from scipy.fftpack import tilbert
 from config import Config
 from dataclasses import dataclass
 import numpy as np
@@ -15,15 +17,7 @@ class SimWorldAction:
 
 @dataclass
 class SimWorldState:
-    theta1: int
-    dtheta1: int
-    theta2: int
-    dtheta2: int
-
-    def as_tile_encoding(self) -> np.ndarray:
-        return np.array(
-            [self.theta1, self.dtheta1, self.theta2, self.dtheta2], dtype=np.float32
-        )
+    tile_encoding: np.array
 
     def __hash__(self):
         return hash(repr(self))
@@ -31,22 +25,40 @@ class SimWorldState:
 
 @dataclass
 class InternalState:
-    theta1: float
-    dtheta1: float
-    theta2: float
-    dtheta2: float
+    theta1: float = 0
+    dtheta1: float = 0
+    theta2: float = 0
+    dtheta2: float = 0
+
+    def as_vector(self) -> np.array:
+        return np.array([self.theta1, self.dtheta1, self.theta2, self.dtheta2])
 
 
 class SimWorld:
     def __init__(self):
         self.cfg = Config.SimWorldConfig()
+
+        buckets = Config.TileEncodingConfig.buckets
+        self.bucket_list = np.arange(0, buckets ** buckets).reshape(
+            (buckets,) * buckets
+        )
+
+        theta1 = np.linspace(0, 360, buckets + 1)
+        dtheta1 = np.linspace(0, 180, buckets + 1)
+        theta2 = np.linspace(0, 360, buckets + 1)
+        dtheta2 = np.linspace(0, 360, buckets + 1)
+        tile1 = np.vstack((theta1, dtheta1, theta2, dtheta2)).T
+        tile2 = tile1 + 20
+        tile3 = tile2 + 20
+        self.tiles = [tile1, tile2, tile3]
+
         self.set_initial_world_state()
 
     def set_initial_world_state(self):
         """Sets the world to its initial state.
         """
         self.state = InternalState()
-        self.external_state = self.convert_internal_to_external_state(False)
+        self.external_state = self.convert_internal_to_external_state()
         self.t = 1
         self.success = False
 
@@ -158,11 +170,21 @@ class SimWorld:
 
         return (self.external_state, reward)
 
-    def convert_internal_to_external_state(self, final_state: bool) -> SimWorldState:
+    def convert_internal_to_external_state(self) -> SimWorldState:
         """
-        Discretizes the current internal state. For example 0.21 -> 8. The integer here represents an index.
         """
-        return False
+        tile_encoding = np.array([])
+        for tile in self.tiles:
+            bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
+            n = np.zeros(
+                Config.TileEncodingConfig.buckets ** Config.TileEncodingConfig.buckets
+            )
+            n[bucket_nr] = 1
+            #print(tile_encoding)
+            #print(n)
+            tile_encoding = np.concatenate((tile_encoding, n))
+        #print(tile_encoding)
+        return SimWorldState(tile_encoding)
 
     def get_state(self) -> SimWorldState:
         return self.external_state
