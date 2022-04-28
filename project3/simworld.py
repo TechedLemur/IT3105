@@ -205,11 +205,11 @@ class SimWorld:
         tile_encoding = np.array([])
         for tile in self.tiles:
             bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
-            n = np.zeros(Config.TileEncodingConfig.buckets ** 4)
+            n = np.zeros((Config.TileEncodingConfig.buckets,) * 4)
             n[bucket_nr] = 1
             # print(tile_encoding)
             # print(n)
-            tile_encoding = np.concatenate((tile_encoding, n))
+            tile_encoding = np.concatenate((tile_encoding, n.flatten()))
         # print(tile_encoding)
         return SimWorldState(tile_encoding)
 
