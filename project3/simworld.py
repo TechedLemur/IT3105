@@ -39,6 +39,9 @@ class InternalState:
     def as_vector(self) -> np.array:
         return np.array([self.theta1, self.dtheta1, self.theta2, self.dtheta2])
 
+    def all(self):
+        return np.array([self.theta1, self.dtheta1, self.theta2, self.dtheta2, self.y_tip])
+
 
 class SimWorld:
     def __init__(self):
@@ -48,9 +51,9 @@ class SimWorld:
         self.bucket_list = np.arange(
             0, buckets ** 4).reshape((buckets,) * buckets)
 
-        theta1 = np.linspace(0, 360, buckets + 1)
-        dtheta1 = np.linspace(0, 180, buckets + 1)
-        theta2 = np.linspace(0, 360, buckets + 1)
+        theta1 = np.linspace(-pi, pi, buckets + 1)
+        dtheta1 = np.linspace(-2, 2, buckets + 1)
+        theta2 = np.linspace(-pi, pi, buckets + 1)
         dtheta2 = np.linspace(0, 360, buckets + 1)
         tile1 = np.vstack((theta1, dtheta1, theta2, dtheta2)).T
         tile2 = tile1 + 20
@@ -68,6 +71,7 @@ class SimWorld:
         self.success = False
         self.x_history = []
         self.y_history = []
+        self.internal_history = []
 
     def __update_state(self, F: float):
         """Update the world state according to the state equations given to us.
@@ -129,8 +133,10 @@ class SimWorld:
 
             dtheta1 = self.state.dtheta1 + ddtheta1 * self.cfg.dt
             theta1 = self.state.theta1 + dtheta1 * self.cfg.dt
+            theta1 = ((theta1 + pi) % (2*pi)) - pi
             dtheta2 = self.state.dtheta2 + ddtheta2 * self.cfg.dt
             theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
+            theta2 = ((theta2 + pi) % (2*pi)) - pi
 
             yp1 = 0
             yp2 = yp1 - self.cfg.L1 * cos(theta1)
@@ -147,6 +153,7 @@ class SimWorld:
 
             self.x_history.append(np.array(x))
             self.y_history.append(np.array(y))
+            self.internal_history.append(self.state.all())
 
     def __is_final_state(self) -> bool:
         """Check if final state
