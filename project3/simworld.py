@@ -29,6 +29,7 @@ class InternalState:
     dtheta1: float = 0
     theta2: float = 0
     dtheta2: float = 0
+    y_tip: float = -2
 
     def as_vector(self) -> np.array:
         return np.array([self.theta1, self.dtheta1, self.theta2, self.dtheta2])
@@ -39,7 +40,8 @@ class SimWorld:
         self.cfg = Config.SimWorldConfig()
 
         buckets = Config.TileEncodingConfig.buckets
-        self.bucket_list = np.arange(0, buckets ** 4).reshape((buckets,) * buckets)
+        self.bucket_list = np.arange(
+            0, buckets ** 4).reshape((buckets,) * buckets)
 
         theta1 = np.linspace(0, 360, buckets + 1)
         dtheta1 = np.linspace(0, 180, buckets + 1)
@@ -121,17 +123,21 @@ class SimWorld:
         dtheta2 = self.state.dtheta2 + ddtheta2 * self.dt
         theta2 = self.state.theta + dtheta2 * self.dt
 
-        self.state = InternalState(theta1, dtheta1, theta2, dtheta2)
+        yp1 = 0
+        yp2 = yp1 - self.cfg.L1 * np.cos(theta1)
+        y_tip = yp2 - self.cfg.L2 * np.cos(theta1+theta2)
+
+        self.state = InternalState(theta1, dtheta1, theta2, dtheta2, y_tip)
 
     def __is_final_state(self) -> bool:
-        """Check if final state and if success or fail.
+        """Check if final state
 
         Returns:
-            Tuple[bool, bool]: If it is the final state and whether it was a success/fail.
+            bool: If it is the final state.
         """
-        return True
+        return self.state.y_tip >= self.cfg.L2
 
-    def __get_reward(self, final_state: bool, success: bool) -> int:
+    def __get_reward(self, final_state: bool) -> int:
         """Get the reward for this state.
 
         Args:
@@ -139,9 +145,10 @@ class SimWorld:
             success (bool): If success or fail
 
         Returns:
-            int: Reward based on final state, success/fail and current internal state.
+            int: Reward based on final state, and current internal state.
+            -1 if not final state, 0 is final state
         """
-        return 1e18
+        return - int(final_state)
 
     def get_legal_actions(self) -> np.array:
         """Get the two legal actions.
@@ -151,29 +158,32 @@ class SimWorld:
         """
         return np.array([1.0, -1.0, 0.0])
 
-    def do_action(self, F: float) -> Tuple[SimWorldState, int]:
+    def do_action(self, A: int) -> Tuple[SimWorldState, int]:
         """Do an a action and return the new state with reward.
 
         Args:
-            action (PoleWorldAction): Action to perform.
+            action (int): Action to perform.  [0,1,2] correspons to forces [-1,0,1]
 
         Returns:
             Tuple[PoleWorldState, int]: New state and reward.
         """
+        F = A-1
         self.t += 1
         self.__update_state(F)
-        final_state, success = self.__is_final_state()
-        self.external_state = self.convert_internal_to_external_state(final_state)
-        reward = self.__get_reward(final_state, success)
+        final_state = self.__is_final_state()
+        self.external_state = self.convert_internal_to_external_state(
+            final_state)
+        reward = self.__get_reward(final_state)
 
-        return (self.external_state, reward)
+        return (self.external_state, reward, final_state)
 
     def convert_internal_to_external_state(self) -> SimWorldState:
         """
         """
         tile_encoding = np.array([])
         for tile in self.tiles:
-            bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
+            bucket_nr = np.argmax(
+                tile - self.state.as_vector() >= 0, axis=0) - 1
             n = np.zeros(Config.TileEncodingConfig.buckets ** 4)
             n[bucket_nr] = 1
             # print(tile_encoding)
