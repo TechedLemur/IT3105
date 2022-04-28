@@ -13,6 +13,7 @@ class Config:
         g = 9.81
         dt = 0.05
         N = 100
+        n = 4
 
     class TileEncodingConfig:
         buckets = 4

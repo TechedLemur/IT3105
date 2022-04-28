@@ -66,77 +66,87 @@ class SimWorld:
         self.external_state = self.convert_internal_to_external_state()
         self.t = 1
         self.success = False
+        self.x_history = []
+        self.y_history = []
 
     def __update_state(self, F: float):
         """Update the world state according to the state equations given to us.
         """
-        phi2 = (
-            self.cfg.m2
-            * self.cfg.Lc2
-            * self.cfg.g
-            * cos(self.state.theta1 + self.state.theta2 - pi / 2)
-        )
-        phi1 = (
-            -self.cfg.m2
-            * self.cfg.L1
-            * self.cfg.Lc2
-            * self.state.dtheta2 ** 2
-            * sin(self.state.theta2)
-            - 2
-            * self.cfg.m2
-            * self.cfg.L1
-            * self.cfg.Lc2
-            * self.state.dtheta1
-            * self.state.dtheta2
-            * sin(self.state.theta2)
-            + (self.cfg.m1 * self.cfg.Lc1 + self.cfg.m2 * self.cfg.L1)
-            * self.cfg.g
-            * cos(self.state.theta1 - pi / 2)
-            + phi2
-        )
 
-        d2 = (
-            self.cfg.m2
-            * (self.cfg.Lc2 ** 2 + self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2))
-            + 1
-        )
-        d1 = (
-            self.cfg.m1 * self.cfg.Lc1 ** 2
-            + self.cfg.m2
-            * (
-                self.cfg.L1 ** 2
-                + self.cfg.Lc2 ** 2
-                + 2 * self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2)
+        for _ in range(self.cfg.n):  # Apply force F for n timesteps
+            phi2 = (
+                self.cfg.m2
+                * self.cfg.Lc2
+                * self.cfg.g
+                * cos(self.state.theta1 + self.state.theta2 - pi / 2)
             )
-            + 2
-        )
+            phi1 = (
+                -self.cfg.m2
+                * self.cfg.L1
+                * self.cfg.Lc2
+                * self.state.dtheta2 ** 2
+                * sin(self.state.theta2)
+                - 2
+                * self.cfg.m2
+                * self.cfg.L1
+                * self.cfg.Lc2
+                * self.state.dtheta1
+                * self.state.dtheta2
+                * sin(self.state.theta2)
+                + (self.cfg.m1 * self.cfg.Lc1 + self.cfg.m2 * self.cfg.L1)
+                * self.cfg.g
+                * cos(self.state.theta1 - pi / 2)
+                + phi2
+            )
 
-        ddtheta2 = (
-            F
-            + d2 / d1 * phi1
-            - self.cfg.m2
-            * self.cfg.L1
-            * self.cfg.Lc2
-            * self.state.dtheta1 ** 2
-            * sin(self.state.theta2)
-            - phi2
-        ) / (self.cfg.m2 * self.cfg.Lc2 ** 2 + 1 - (d2 ** 2) / d1)
-        ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
+            d2 = (
+                self.cfg.m2
+                * (self.cfg.Lc2 ** 2 + self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2))
+                + 1
+            )
+            d1 = (
+                self.cfg.m1 * self.cfg.Lc1 ** 2
+                + self.cfg.m2
+                * (
+                    self.cfg.L1 ** 2
+                    + self.cfg.Lc2 ** 2
+                    + 2 * self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2)
+                )
+                + 2
+            )
 
-        dtheta1 = self.state.dtheta1 + ddtheta1 * self.cfg.dt
-        theta1 = self.state.theta1 + dtheta1 * self.cfg.dt
-        dtheta2 = self.state.dtheta2 + ddtheta2 * self.cfg.dt
-        theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
+            ddtheta2 = (
+                F
+                + d2 / d1 * phi1
+                - self.cfg.m2
+                * self.cfg.L1
+                * self.cfg.Lc2
+                * self.state.dtheta1 ** 2
+                * sin(self.state.theta2)
+                - phi2
+            ) / (self.cfg.m2 * self.cfg.Lc2 ** 2 + 1 - (d2 ** 2) / d1)
+            ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
 
-        yp1 = 0
-        yp2 = yp1 - self.cfg.L1 * np.cos(theta1)
-        y_tip = yp2 - self.cfg.L2 * np.cos(theta1+theta2)
-        xp1 = 0
-        xp2 = xp1 + self.cfg.L1 * np.sin(theta1)
-        x_tip = xp2 + self.cfg.L2 * np.sin(theta1+theta2)
+            dtheta1 = self.state.dtheta1 + ddtheta1 * self.cfg.dt
+            theta1 = self.state.theta1 + dtheta1 * self.cfg.dt
+            dtheta2 = self.state.dtheta2 + ddtheta2 * self.cfg.dt
+            theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
 
-        self.state = InternalState(
-            theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip)
+            yp1 = 0
+            yp2 = yp1 - self.cfg.L1 * np.cos(theta1)
+            y_tip = yp2 - self.cfg.L2 * np.cos(theta1+theta2)
+            xp1 = 0
+            xp2 = xp1 + self.cfg.L1 * np.sin(theta1)
+            x_tip = xp2 + self.cfg.L2 * np.sin(theta1+theta2)
+
+            self.state = InternalState(
+                theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip)
+
+            x = [0, xp2, x_tip]
+            y = [0, yp2, y_tip]
+
+            self.x_history.append(np.array(x))
+            self.y_history.append(np.array(y))
 
     def __is_final_state(self) -> bool:
         """Check if final state
