@@ -16,5 +16,9 @@ class Config:
         n = 4
 
     class TileEncodingConfig:
-        buckets = 4
+        buckets = 6
         tiles = 4
+
+    class AgentConfig:
+
+        buffer_size = 1000

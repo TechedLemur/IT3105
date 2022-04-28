@@ -48,17 +48,23 @@ class SimWorld:
         self.cfg = Config.SimWorldConfig()
 
         buckets = Config.TileEncodingConfig.buckets
-        self.bucket_list = np.arange(0, buckets ** 4).reshape((buckets,) * 4)
+        no_tiles = Config.TileEncodingConfig.tiles
+        # self.bucket_list = np.arange(0, buckets ** 4).reshape((buckets,) * 4)
 
-        theta1 = np.linspace(-pi, pi, buckets + 1)
-        dtheta1 = np.linspace(-2, 2, buckets + 1)
-        theta2 = np.linspace(-pi, pi, buckets + 1)
-        dtheta2 = np.linspace(0, 360, buckets + 1)
+        theta1 = np.append(np.linspace(-pi*2/buckets, pi, buckets-1), 2*pi)
+        dtheta1 = np.append(np.linspace(-2*pi, 2*pi, buckets-1), 4*pi)
+        theta2 = np.append(np.linspace(-pi*2/buckets, pi, buckets-1), 2*pi)
+        dtheta2 = np.append(np.linspace(-2*pi, 2*pi, buckets-1), 10*pi)
 
-        tile1 = np.vstack((theta1, dtheta1, theta2, dtheta2)).T
-        tile2 = tile1 + 20
-        tile3 = tile2 + 20
-        self.tiles = [tile1, tile2, tile3]
+        tiles = []
+        for i in range(no_tiles):
+
+            tile = np.vstack((theta1, dtheta1, theta2, dtheta2)).T
+            tile += np.array([i*pi*2/(buckets*no_tiles), i*pi /
+                             no_tiles, i*pi*2/(buckets*no_tiles), i*pi/no_tiles])
+
+            tiles.append(tile)
+        self.tiles = tiles
 
         self.set_initial_world_state()
 
@@ -68,7 +74,7 @@ class SimWorld:
         self.state = InternalState()
         self.external_state = self.convert_internal_to_external_state()
         self.t = 1
-        self.success = False
+        self.over = False
         self.x_history = []
         self.y_history = []
         self.internal_history = []
@@ -135,9 +141,15 @@ class SimWorld:
             ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
 
             dtheta1 = self.state.dtheta1 + ddtheta1 * self.cfg.dt
+
+            dtheta1 = max(min(dtheta1, 4*pi), -4*pi)
+
             theta1 = self.state.theta1 + dtheta1 * self.cfg.dt
             theta1 = ((theta1 + pi) % (2*pi)) - pi
+
             dtheta2 = self.state.dtheta2 + ddtheta2 * self.cfg.dt
+            dtheta2 = max(min(dtheta2, 10*pi), -10*pi)
+
             theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
             theta2 = ((theta2 + pi) % (2*pi)) - pi
 
@@ -155,6 +167,8 @@ class SimWorld:
             x = [0, xp2, x_tip]
             y = [0, yp2, y_tip]
 
+            self.over = (y_tip >= self.cfg.L2) or self.over
+
             self.x_history.append(np.array(x))
             self.y_history.append(np.array(y))
             self.internal_history.append(self.state.all())
@@ -165,7 +179,8 @@ class SimWorld:
         Returns:
             bool: If it is the final state.
         """
-        return self.state.y_tip >= self.cfg.L2
+        return self.over
+        # return self.state.y_tip >= self.cfg.L2
 
     def __get_reward(self, final_state: bool) -> int:
         """Get the reward for this state.
@@ -176,9 +191,9 @@ class SimWorld:
 
         Returns:
             int: Reward based on final state, and current internal state.
-            -1 if not final state, 0 is final state
+            -1 if not final state, 6 if final state
         """
-        return -int(final_state)
+        return 9 * int(final_state)-1
 
     def get_legal_actions(self) -> np.array:
         """Get the two legal actions.
@@ -211,9 +226,10 @@ class SimWorld:
         """
         tile_encoding = np.array([])
         for tile in self.tiles:
-            bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
+            bucket_nr = np.argmax(
+                tile - self.state.as_vector() >= 0, axis=0)
             n = np.zeros((Config.TileEncodingConfig.buckets,) * 4)
-            n[bucket_nr] = 1
+            n[bucket_nr[0], bucket_nr[1], bucket_nr[2], bucket_nr[3]] = 1
             # print(tile_encoding)
             # print(n)
             tile_encoding = np.concatenate((tile_encoding, n.flatten()))
