@@ -133,11 +133,11 @@ class SimWorld:
             theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
 
             yp1 = 0
-            yp2 = yp1 - self.cfg.L1 * np.cos(theta1)
-            y_tip = yp2 - self.cfg.L2 * np.cos(theta1+theta2)
+            yp2 = yp1 - self.cfg.L1 * cos(theta1)
+            y_tip = yp2 - self.cfg.L2 * cos(theta1+theta2)
             xp1 = 0
-            xp2 = xp1 + self.cfg.L1 * np.sin(theta1)
-            x_tip = xp2 + self.cfg.L2 * np.sin(theta1+theta2)
+            xp2 = xp1 + self.cfg.L1 * sin(theta1)
+            x_tip = xp2 + self.cfg.L2 * sin(theta1+theta2)
 
             self.state = InternalState(
                 theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip)
@@ -173,9 +173,9 @@ class SimWorld:
         """Get the two legal actions.
 
         Returns:
-            List[PoleWorldAction]: The two legal actions.
+            List[int]: The legal actions.
         """
-        return np.array([1.0, -1.0, 0.0])
+        return np.arange(3)
 
     def do_action(self, A: int) -> Tuple[SimWorldState, int]:
         """Do an a action and return the new state with reward.
