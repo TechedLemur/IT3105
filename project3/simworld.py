@@ -39,9 +39,7 @@ class SimWorld:
         self.cfg = Config.SimWorldConfig()
 
         buckets = Config.TileEncodingConfig.buckets
-        self.bucket_list = np.arange(0, buckets ** buckets).reshape(
-            (buckets,) * buckets
-        )
+        self.bucket_list = np.arange(0, buckets ** 4).reshape((buckets,) * buckets)
 
         theta1 = np.linspace(0, 360, buckets + 1)
         dtheta1 = np.linspace(0, 180, buckets + 1)
@@ -176,14 +174,12 @@ class SimWorld:
         tile_encoding = np.array([])
         for tile in self.tiles:
             bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
-            n = np.zeros(
-                Config.TileEncodingConfig.buckets ** Config.TileEncodingConfig.buckets
-            )
+            n = np.zeros(Config.TileEncodingConfig.buckets ** 4)
             n[bucket_nr] = 1
-            #print(tile_encoding)
-            #print(n)
+            # print(tile_encoding)
+            # print(n)
             tile_encoding = np.concatenate((tile_encoding, n))
-        #print(tile_encoding)
+        # print(tile_encoding)
         return SimWorldState(tile_encoding)
 
     def get_state(self) -> SimWorldState:
