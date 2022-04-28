@@ -45,13 +45,13 @@ class SimWorld:
         self.cfg = Config.SimWorldConfig()
 
         buckets = Config.TileEncodingConfig.buckets
-        self.bucket_list = np.arange(
-            0, buckets ** 4).reshape((buckets,) * buckets)
+        self.bucket_list = np.arange(0, buckets ** 4).reshape((buckets,) * 4)
 
         theta1 = np.linspace(0, 360, buckets + 1)
         dtheta1 = np.linspace(0, 180, buckets + 1)
         theta2 = np.linspace(0, 360, buckets + 1)
         dtheta2 = np.linspace(0, 360, buckets + 1)
+
         tile1 = np.vstack((theta1, dtheta1, theta2, dtheta2)).T
         tile2 = tile1 + 20
         tile3 = tile2 + 20
@@ -101,7 +101,10 @@ class SimWorld:
 
             d2 = (
                 self.cfg.m2
-                * (self.cfg.Lc2 ** 2 + self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2))
+                * (
+                    self.cfg.Lc2 ** 2
+                    + self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2)
+                )
                 + 1
             )
             d1 = (
@@ -134,13 +137,14 @@ class SimWorld:
 
             yp1 = 0
             yp2 = yp1 - self.cfg.L1 * cos(theta1)
-            y_tip = yp2 - self.cfg.L2 * cos(theta1+theta2)
+            y_tip = yp2 - self.cfg.L2 * cos(theta1 + theta2)
             xp1 = 0
             xp2 = xp1 + self.cfg.L1 * sin(theta1)
-            x_tip = xp2 + self.cfg.L2 * sin(theta1+theta2)
+            x_tip = xp2 + self.cfg.L2 * sin(theta1 + theta2)
 
             self.state = InternalState(
-                theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip)
+                theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip
+            )
 
             x = [0, xp2, x_tip]
             y = [0, yp2, y_tip]
@@ -167,7 +171,7 @@ class SimWorld:
             int: Reward based on final state, and current internal state.
             -1 if not final state, 0 is final state
         """
-        return - int(final_state)
+        return -int(final_state)
 
     def get_legal_actions(self) -> np.array:
         """Get the two legal actions.
@@ -186,7 +190,7 @@ class SimWorld:
         Returns:
             Tuple[PoleWorldState, int]: New state and reward.
         """
-        F = A-1
+        F = A - 1
         self.t += 1
         self.__update_state(F)
         final_state = self.__is_final_state()
@@ -200,8 +204,7 @@ class SimWorld:
         """
         tile_encoding = np.array([])
         for tile in self.tiles:
-            bucket_nr = np.argmax(
-                tile - self.state.as_vector() >= 0, axis=0) - 1
+            bucket_nr = np.argmax(tile - self.state.as_vector() >= 0, axis=0) - 1
             n = np.zeros(Config.TileEncodingConfig.buckets ** 4)
             n[bucket_nr] = 1
             # print(tile_encoding)
@@ -217,7 +220,7 @@ class SimWorld:
         x = [0, self.state.xp2, self.state.x_tip]
         y = [0, self.state.yp2, self.state.y_tip]
         plt.figure(figsize=(5, 5))
-        plt.plot(x, y, 'o-', lw=2)
+        plt.plot(x, y, "o-", lw=2)
         plt.xlim(-2, 2)
         plt.ylim(-2.5, 1.5)
         plt.show()
