@@ -5,6 +5,8 @@ from config import Config
 from dataclasses import dataclass
 import numpy as np
 from math import sin, cos, pi
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 
 @dataclass
@@ -29,7 +31,10 @@ class InternalState:
     dtheta1: float = 0
     theta2: float = 0
     dtheta2: float = 0
+    yp2: float = -1
     y_tip: float = -2
+    xp2: float = 0
+    x_tip: float = 0
 
     def as_vector(self) -> np.array:
         return np.array([self.theta1, self.dtheta1, self.theta2, self.dtheta2])
@@ -101,7 +106,7 @@ class SimWorld:
             * (
                 self.cfg.L1 ** 2
                 + self.cfg.Lc2 ** 2
-                + 2 * self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta)
+                + 2 * self.cfg.L1 * self.cfg.Lc2 * cos(self.state.theta2)
             )
             + 2
         )
@@ -118,16 +123,20 @@ class SimWorld:
         ) / (self.cfg.m2 * self.cfg.Lc2 ** 2 + 1 - (d2 ** 2) / d1)
         ddtheta1 = -(d2 * ddtheta2 + phi1) / d1
 
-        dtheta1 = self.state.dtheta1 + ddtheta1 * self.dt
-        theta1 = self.state.theta1 + dtheta1 * self.dt
-        dtheta2 = self.state.dtheta2 + ddtheta2 * self.dt
-        theta2 = self.state.theta + dtheta2 * self.dt
+        dtheta1 = self.state.dtheta1 + ddtheta1 * self.cfg.dt
+        theta1 = self.state.theta1 + dtheta1 * self.cfg.dt
+        dtheta2 = self.state.dtheta2 + ddtheta2 * self.cfg.dt
+        theta2 = self.state.theta2 + dtheta2 * self.cfg.dt
 
         yp1 = 0
         yp2 = yp1 - self.cfg.L1 * np.cos(theta1)
         y_tip = yp2 - self.cfg.L2 * np.cos(theta1+theta2)
+        xp1 = 0
+        xp2 = xp1 + self.cfg.L1 * np.sin(theta1)
+        x_tip = xp2 + self.cfg.L2 * np.sin(theta1+theta2)
 
-        self.state = InternalState(theta1, dtheta1, theta2, dtheta2, y_tip)
+        self.state = InternalState(
+            theta1, dtheta1, theta2, dtheta2, yp2, y_tip, xp2, x_tip)
 
     def __is_final_state(self) -> bool:
         """Check if final state
@@ -171,8 +180,7 @@ class SimWorld:
         self.t += 1
         self.__update_state(F)
         final_state = self.__is_final_state()
-        self.external_state = self.convert_internal_to_external_state(
-            final_state)
+        self.external_state = self.convert_internal_to_external_state()
         reward = self.__get_reward(final_state)
 
         return (self.external_state, reward, final_state)
@@ -194,3 +202,12 @@ class SimWorld:
 
     def get_state(self) -> SimWorldState:
         return self.external_state
+
+    def plot_current_state(self):
+        x = [0, self.state.xp2, self.state.x_tip]
+        y = [0, self.state.yp2, self.state.y_tip]
+        plt.figure(figsize=(5, 5))
+        plt.plot(x, y, 'o-', lw=2)
+        plt.xlim(-2, 2)
+        plt.ylim(-2.5, 1.5)
+        plt.show()
