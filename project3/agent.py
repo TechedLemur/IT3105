@@ -1,9 +1,7 @@
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import random
-from config import Config
 
 
 class Agent:
@@ -111,15 +109,10 @@ class Agent:
             self.reset = True
 
     def reset_episode(self):
-        # i = Config.AgentConfig.buffer_size
-        # self.train_x[0] = self.train_x[0][-i:]
-        # self.train_x[1] = self.train_x[1][-i:]
-        # self.train_x[2] = self.train_x[2][-i:]
-        # self.train_y[0] = self.train_y[0][-i:]
-        # self.train_y[1] = self.train_y[1][-i:]
-        # self.train_y[2] = self.train_y[2][-i:]
+
         self.train_x = [[], [], []]
         self.train_y = [[], [], []]
         self.epsilon *= self.epsilon_decay
         if self.reset:
             self.epsilon = self.start_epsilon
+            self.reset = False
