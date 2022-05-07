@@ -14,4 +14,4 @@ General-purpose Monte Carlo Tree Search (MCTS) system for use in a complex 2-per
 
 Use Coarse Coding (Tile encoding) and SARSA to solve the Acrobat problem. Agent uses a single layer neural network to estimate Q(S,A).
 
-![Success](project3\videos\96.gif)
+![Success](project3/videos/96.gif)
