@@ -8,9 +8,11 @@ from config import Config
 
 class Agent:
 
-    def __init__(self, gamma, lr, input_shape) -> None:
+    def __init__(self, gamma, lr, input_shape, start_epsilon=0.1, epsilon_decay=0.96) -> None:
         self.gamma = gamma
-
+        self.start_epsilon = start_epsilon
+        self.epsilon = start_epsilon
+        self.epsilon_decay = epsilon_decay
         self.train_x = [[], [], []]
         self.train_y = [[], [], []]
 
@@ -52,10 +54,11 @@ class Agent:
         self.m1 = m1
         self.m2 = m2
         self.model = model
+        self.reset = False
 
-    def select_action(self, state, use_cache=False, epsilon=0.05):
+    def select_action(self, state, use_cache=False):
 
-        if epsilon > random.random():
+        if self.epsilon > random.random():
             return random.randint(0, 2)
 
         if use_cache:  # Use already calculated value from update()
@@ -96,10 +99,16 @@ class Agent:
             self.train_y[1]), np.array(self.train_y[2])
         if x0.any():
             self.m0.fit(x0, y0, epochs=epochs, batch_size=batch_size)
+        else:
+            self.reset = True
         if x1.any():
             self.m1.fit(x1, y1, epochs=epochs, batch_size=batch_size)
+        else:
+            self.reset = True
         if x2.any():
             self.m2.fit(x2, y2, epochs=epochs, batch_size=batch_size)
+        else:
+            self.reset = True
 
     def reset_episode(self):
         # i = Config.AgentConfig.buffer_size
@@ -111,3 +120,6 @@ class Agent:
         # self.train_y[2] = self.train_y[2][-i:]
         self.train_x = [[], [], []]
         self.train_y = [[], [], []]
+        self.epsilon *= self.epsilon_decay
+        if self.reset:
+            self.epsilon = self.start_epsilon

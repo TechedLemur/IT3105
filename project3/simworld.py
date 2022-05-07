@@ -193,7 +193,7 @@ class SimWorld:
             int: Reward based on final state, and current internal state.
             -1 if not final state, 6 if final state
         """
-        return 9 * int(final_state)-1
+        return 1 * int(final_state)-1
 
     def get_legal_actions(self) -> np.array:
         """Get the two legal actions.
