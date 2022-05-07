@@ -1,6 +1,6 @@
 # IT3105
 
-Artificial Intelligence Programming
+Artificial Intelligence Programming course at NTNU. The course consist of 3 different projects where reinforcement learning is an essential topic.
 
 ## Poject 1 - General-Purpose RL System
 
@@ -10,8 +10,8 @@ General-purpose Actor-Critic Model (ACM) for Reinforcement Learning. Applied to 
 
 General-purpose Monte Carlo Tree Search (MCTS) system for use in a complex 2-person game.
 
-# Setup
+## Project 3 - Reinforcement Learning with Coarse Coding for Acrobat Control
 
-Create conda environment from the conda environment file
+Use Coarse Coding (Tile encoding) and SARSA to solve the Acrobat problem. Agent uses a single layer neural network to estimate Q(S,A).
 
-`conda env create --file condaenv.yml`
+![Success](project3\videos\96.gif)
